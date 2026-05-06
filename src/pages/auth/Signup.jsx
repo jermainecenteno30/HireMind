@@ -45,7 +45,7 @@ const Signup = () => {
     const result = await authService.signInWithGoogle();
     
     if (result.success) {
-      toast.success('Welcome to HirePath!');
+      toast.success('Welcome to HireMind!');
       navigate('/dashboard');
     } else {
       toast.error(result.error);
@@ -65,7 +65,7 @@ const Signup = () => {
             Start your career journey
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Join HirePath and track your path to success
+            Join HireMind and track your path to success
           </p>
         </div>
         

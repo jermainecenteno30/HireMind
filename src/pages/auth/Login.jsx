@@ -33,7 +33,7 @@ const Login = () => {
     const result = await authService.signInWithGoogle();
     
     if (result.success) {
-      toast.success('Welcome to HirePath!');
+      toast.success('Welcome to HireMind!');
       navigate('/dashboard');
     } else {
       toast.error(result.error);
@@ -50,7 +50,7 @@ const Login = () => {
             <SparklesIcon className="h-12 w-12 text-primary-600" />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Welcome back to HirePath
+            Welcome back to HireMind
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Track your career journey, ace your job search
