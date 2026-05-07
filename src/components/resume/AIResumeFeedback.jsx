@@ -13,16 +13,23 @@ import {
   TagIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
+
+// 🔥 FORCE FREE ACCESS - SET TO true TO UNLOCK AI FOR ALL USERS 🔥
+const FORCE_FREE_ACCESS = true;
 
 const AIResumeFeedback = ({ resumeContent, resumeTitle, userSkills = [] }) => {
-  const { isPremium } = useAuth();
+  const { isPremium: userIsPremium } = useAuth();
   const { analyzeResume, isProcessing } = useAI();
   const [feedback, setFeedback] = useState(null);
   const [loading, setLoading] = useState(false);
+  
+  // Allow free access for testing
+  const hasAccess = FORCE_FREE_ACCESS || userIsPremium;
 
   const handleAnalyze = async () => {
     if (!resumeContent) {
-      alert('Please add content to your resume first');
+      toast.error('Please add content to your resume first');
       return;
     }
 
@@ -31,11 +38,15 @@ const AIResumeFeedback = ({ resumeContent, resumeTitle, userSkills = [] }) => {
     
     if (result && !result.error) {
       setFeedback(result);
+      toast.success('AI analysis complete!');
+    } else {
+      toast.error('Failed to analyze resume. Please try again.');
     }
     setLoading(false);
   };
 
-  if (!isPremium) {
+  // If no access, show login/upgrade prompt (but we're forcing free access)
+  if (!hasAccess) {
     return (
       <Card>
         <CardBody className="text-center py-8">
@@ -64,7 +75,7 @@ const AIResumeFeedback = ({ resumeContent, resumeTitle, userSkills = [] }) => {
           <div>
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
               <SparklesIcon className="h-5 w-5 text-primary-600 mr-2" />
-              AI Resume Feedback
+              AI Resume Feedback {FORCE_FREE_ACCESS && <Badge variant="success" className="ml-2 text-xs">Free Access</Badge>}
             </h3>
             <p className="text-sm text-gray-600 mt-1">
               Powered by Google Gemini AI • Analyzing "{resumeTitle || 'Your Resume'}"
@@ -182,7 +193,7 @@ const AIResumeFeedback = ({ resumeContent, resumeTitle, userSkills = [] }) => {
             Click "Analyze with AI" to get intelligent feedback on your resume
           </p>
           <p className="text-xs text-gray-400 mt-2">
-            Powered by Google Gemini AI • 15 requests per minute limit
+            Powered by Google Gemini AI • Free for all users
           </p>
         </CardBody>
       )}
