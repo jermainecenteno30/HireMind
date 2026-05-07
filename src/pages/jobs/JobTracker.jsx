@@ -83,6 +83,7 @@ const CompanyLogo = ({ companyName, size = 'md' }) => {
 };
 
 // Sortable Job Card Component
+// Sortable Job Card Component - FIXED for better button responsiveness
 const SortableJobCard = ({ job, onEdit, onDelete, onMatchScore, onStatusChange, onSaveToWishlist, isWishlist }) => {
   const {
     attributes,
@@ -118,6 +119,37 @@ const SortableJobCard = ({ job, onEdit, onDelete, onMatchScore, onStatusChange, 
 
   const ageStatus = getAgeStatus(job.dateApplied);
 
+  // Handle button clicks without drag interference
+  const handleEditClick = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onEdit(job);
+  };
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onDelete(job.id);
+  };
+
+  const handleMatchClick = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onMatchScore(job);
+  };
+
+  const handleSaveClick = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onSaveToWishlist(job);
+  };
+
+  const handleStatusChangeClick = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onStatusChange(job.id, e.target.value);
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -130,6 +162,7 @@ const SortableJobCard = ({ job, onEdit, onDelete, onMatchScore, onStatusChange, 
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-start gap-3">
+              {/* Drag Handle */}
               <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 mt-1">
                 ⋮⋮
               </div>
@@ -182,11 +215,12 @@ const SortableJobCard = ({ job, onEdit, onDelete, onMatchScore, onStatusChange, 
             </div>
           </div>
           
+          {/* Action Buttons - Fixed with stopPropagation */}
           <div className="flex flex-col sm:flex-row gap-2">
             <Button
               size="sm"
               variant="outline"
-              onClick={() => onMatchScore(job)}
+              onClick={handleMatchClick}
               className="whitespace-nowrap"
             >
               <ChartBarIcon className="h-4 w-4 mr-1" />
@@ -194,7 +228,7 @@ const SortableJobCard = ({ job, onEdit, onDelete, onMatchScore, onStatusChange, 
             </Button>
             <select
               value={job.status}
-              onChange={(e) => onStatusChange(job.id, e.target.value)}
+              onChange={handleStatusChangeClick}
               className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="applied">📋 Applied</option>
@@ -205,7 +239,7 @@ const SortableJobCard = ({ job, onEdit, onDelete, onMatchScore, onStatusChange, 
             <Button
               size="sm"
               variant="outline"
-              onClick={() => onSaveToWishlist(job)}
+              onClick={handleSaveClick}
               className="whitespace-nowrap"
             >
               <BookmarkIcon className="h-4 w-4 mr-1" />
@@ -214,14 +248,14 @@ const SortableJobCard = ({ job, onEdit, onDelete, onMatchScore, onStatusChange, 
             <Button
               size="sm"
               variant="outline"
-              onClick={() => onEdit(job)}
+              onClick={handleEditClick}
             >
               <PencilIcon className="h-4 w-4" />
             </Button>
             <Button
               variant="danger"
               size="sm"
-              onClick={() => onDelete(job.id)}
+              onClick={handleDeleteClick}
             >
               <TrashIcon className="h-4 w-4" />
             </Button>
