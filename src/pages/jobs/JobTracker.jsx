@@ -57,6 +57,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 // Company Logo Component
+// Update the CompanyLogo component to handle errors better
 const CompanyLogo = ({ companyName, size = 'md' }) => {
   const [imageError, setImageError] = useState(false);
   const initials = companyName?.charAt(0).toUpperCase() || '?';
@@ -66,9 +67,11 @@ const CompanyLogo = ({ companyName, size = 'md' }) => {
     lg: 'w-12 h-12 text-lg'
   };
   
-  const logoUrl = `https://logo.clearbit.com/${companyName?.toLowerCase().replace(/\s/g, '')}.com`;
+  // Clean company name for URL
+  const cleanCompanyName = companyName?.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9.-]/g, '');
+  const logoUrl = `https://logo.clearbit.com/${cleanCompanyName}.com`;
   
-  if (!imageError && companyName) {
+  if (!imageError && companyName && cleanCompanyName) {
     return (
       <img
         src={logoUrl}
