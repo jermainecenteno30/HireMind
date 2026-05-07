@@ -22,10 +22,26 @@ export const useResumes = () => {
         orderBy('updatedAt', 'desc')
       );
       const querySnapshot = await getDocs(q);
-      const resumesData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const resumesData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        
+        // Ensure content is a string (fix for old data)
+        let content = data.content || '';
+        if (typeof content !== 'string') {
+          // If content is an object, stringify it or use empty string
+          content = typeof content === 'object' ? JSON.stringify(content) : '';
+        }
+        
+        return {
+          id: doc.id,
+          ...data,
+          content: content, // Guaranteed to be a string
+          title: data.title || 'Untitled Resume',
+          version: data.version || 1,
+          tags: data.tags || [],
+          updatedAt: data.updatedAt || new Date().toISOString()
+        };
+      });
       setResumes(resumesData);
     } catch (error) {
       console.error('Error fetching resumes:', error);
@@ -45,11 +61,15 @@ export const useResumes = () => {
     }
 
     try {
-      // Store both structured data AND content for templates
+      // Ensure content is a string
+      const content = typeof resumeData.content === 'string' 
+        ? resumeData.content 
+        : (resumeData.content || '');
+      
       const newResume = {
-        title: resumeData.title,
+        title: resumeData.title || 'Untitled Resume',
         tags: resumeData.tags || [],
-        content: resumeData.content || '', // IMPORTANT: Store the markdown content for templates
+        content: content,
         structuredData: resumeData.structuredData || null,
         userId: user.uid,
         createdAt: new Date().toISOString(),
@@ -69,10 +89,20 @@ export const useResumes = () => {
   const updateResume = async (resumeId, resumeData) => {
     try {
       const resumeRef = doc(db, 'resumes', resumeId);
+      
+      // Ensure content is a string
+      const content = typeof resumeData.content === 'string' 
+        ? resumeData.content 
+        : (resumeData.content || '');
+      
       const updatedData = {
-        ...resumeData,
+        title: resumeData.title,
+        tags: resumeData.tags || [],
+        content: content,
+        structuredData: resumeData.structuredData || null,
         updatedAt: new Date().toISOString(),
-        version: (resumes.find(r => r.id === resumeId)?.version || 0) + 1
+        version: (resumes.find(r => r.id === resumeId)?.version || 0) + 1,
+        atsScore: resumeData.atsScore || 0
       };
       await updateDoc(resumeRef, updatedData);
       setResumes(resumes.map(resume => 

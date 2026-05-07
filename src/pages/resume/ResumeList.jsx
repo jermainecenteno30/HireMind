@@ -241,8 +241,8 @@ const ResumeList = () => {
                   </div>
                   
                   <p className="text-sm text-gray-600 line-clamp-3 mb-4">
-                    {resume.content ? resume.content.substring(0, 150) : 'No content yet'}...
-                  </p>
+  {resume.content && typeof resume.content === 'string' ? resume.content.substring(0, 150) : 'No content yet'}...
+</p>
                   
                   <Button 
                     variant="outline" 
@@ -333,39 +333,38 @@ const ResumeList = () => {
               
               {/* Modal Content - Rendered Template with null check */}
               <div className="p-6">
-                {viewingResume && viewingResume.content ? (
-                  renderResumeTemplate()
-                ) : (
-                  <div className="text-center py-12 bg-gray-50 rounded-lg">
-                    <DocumentTextIcon className="h-16 w-16 text-gray-300 mx-auto mb-3" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Resume Content</h3>
-                    <p className="text-gray-500 mb-4">
-                      This resume doesn't have any content yet.
-                    </p>
-                    <Button 
-                      size="sm" 
-                      onClick={() => {
-                        setViewingResume(null);
-                        handleEdit(viewingResume);
-                      }}
-                    >
-                      <PencilIcon className="h-4 w-4 mr-2" />
-                      Edit Resume
-                    </Button>
-                  </div>
-                )}
+{viewingResume && viewingResume.content && typeof viewingResume.content === 'string' ? (
+  renderResumeTemplate()
+) : (
+  <div className="text-center py-12 bg-gray-50 rounded-lg">
+    <DocumentTextIcon className="h-16 w-16 text-gray-300 mx-auto mb-3" />
+    <h3 className="text-lg font-medium text-gray-900 mb-2">No Resume Content</h3>
+    <p className="text-gray-500 mb-4">
+      This resume doesn't have any content yet.
+    </p>
+    <Button 
+      size="sm" 
+      onClick={() => {
+        setViewingResume(null);
+        handleEdit(viewingResume);
+      }}
+    >
+      <PencilIcon className="h-4 w-4 mr-2" />
+      Edit Resume
+    </Button>
+  </div>
+)}
                 
                 {/* AI Resume Feedback Section (Premium) */}
-                {isPremium && viewingResume && viewingResume.content && (
-                  <div className="mt-6">
-                    <AIResumeFeedback 
-                      resumeContent={viewingResume.content}
-                      resumeTitle={viewingResume.title}
-                      userSkills={viewingResume.tags || []}
-                    />
-                  </div>
-                )}
-                
+                {isPremium && viewingResume && viewingResume.content && typeof viewingResume.content === 'string' && (
+  <div className="mt-6">
+    <AIResumeFeedback 
+      resumeContent={viewingResume.content}
+      resumeTitle={viewingResume.title}
+      userSkills={viewingResume.tags || []}
+    />
+  </div>
+)}
                 {/* Upgrade prompt for free users */}
                 {!isPremium && (
                   <div className="mt-6 p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg text-center">
