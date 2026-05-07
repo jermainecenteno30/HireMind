@@ -6,6 +6,7 @@ import Badge from '../../components/ui/Badge';
 import { useAuth } from '../../context/AuthContext';
 import { useAI } from '../../context/AIContext';
 import { portfolioService } from '../../services/portfolioService';
+import { portfolioAnalyticsService } from '../../services/portfolioAnalyticsService';
 import { uploadService } from '../../services/uploadService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -25,9 +26,12 @@ import {
   ExclamationTriangleIcon,
   ArrowUpIcon,
   ArrowDownIcon,
-  Bars3Icon
+  Bars3Icon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import ThemeSelector from '../../components/portfolio/ThemeSelector';
+import PortfolioAnalytics from '../../components/portfolio/PortfolioAnalytics';
 
 // TEMPORARY - Remove for production
 const FORCE_PREMIUM_ACCESS = true;
@@ -69,11 +73,29 @@ const PortfolioBuilder = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [generatingBio, setGeneratingBio] = useState(false);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [selectedTheme, setSelectedTheme] = useState('modern');
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [portfolioId, setPortfolioId] = useState(null);
 
   // Load existing portfolio
   useEffect(() => {
     loadPortfolio();
   }, [user]);
+
+  // Load saved theme preference
+  useEffect(() => {
+    if (portfolioId) {
+      const savedTheme = localStorage.getItem(`portfolio_theme_${portfolioId}`);
+      if (savedTheme) setSelectedTheme(savedTheme);
+    }
+  }, [portfolioId]);
+
+  // Auto-save theme preference
+  useEffect(() => {
+    if (portfolioId && selectedTheme) {
+      localStorage.setItem(`portfolio_theme_${portfolioId}`, selectedTheme);
+    }
+  }, [selectedTheme, portfolioId]);
 
   // Auto-save draft
   useEffect(() => {
@@ -114,6 +136,7 @@ const PortfolioBuilder = () => {
     
     if (result.success && result.data) {
       setPortfolio(result.data);
+      setPortfolioId(result.data.id);
       setIsPublished(true);
       setShareUrl(`${window.location.origin}/portfolio/${result.data.username}`);
     } else {
@@ -132,6 +155,7 @@ const PortfolioBuilder = () => {
     setSaving(true);
     const result = await portfolioService.savePortfolio(user.uid, portfolio);
     if (result.success) {
+      if (!portfolioId && result.id) setPortfolioId(result.id);
       setHasChanges(false);
     }
     setSaving(false);
@@ -162,6 +186,7 @@ const PortfolioBuilder = () => {
     const result = await portfolioService.savePortfolio(user.uid, portfolio);
     
     if (result.success) {
+      if (!portfolioId && result.id) setPortfolioId(result.id);
       setIsPublished(true);
       setShareUrl(`${window.location.origin}/portfolio/${portfolio.username}`);
       toast.success('Portfolio saved successfully!');
@@ -199,9 +224,8 @@ const PortfolioBuilder = () => {
     }
     
     setGeneratingBio(true);
-    const prompt = `Generate a professional bio for a ${portfolio.title || 'software developer'} with skills in ${portfolio.projects.map(p => p.technologies).join(', ')}. Keep it concise, 2-3 sentences.`;
     
-    // Use AI service to generate bio
+    // Simulate AI generation
     setTimeout(() => {
       const generatedBio = `Passionate ${portfolio.title || 'developer'} with experience building web applications. 
       Skilled in modern technologies and committed to writing clean, efficient code. 
@@ -340,6 +364,10 @@ const PortfolioBuilder = () => {
           {saving && (
             <span className="text-sm text-gray-500 self-center">Saving...</span>
           )}
+          <Button onClick={() => setShowAnalytics(!showAnalytics)} variant="outline">
+            <ChartBarIcon className="h-4 w-4 mr-2" />
+            {showAnalytics ? 'Hide Analytics' : 'View Analytics'}
+          </Button>
           <Button onClick={savePortfolio} disabled={saving || !canPublish()}>
             <ShareIcon className="h-4 w-4 mr-2" />
             {isPublished ? 'Update Portfolio' : 'Publish Portfolio'}
@@ -372,6 +400,25 @@ const PortfolioBuilder = () => {
         </div>
       )}
 
+      {/* Analytics Dashboard */}
+      {showAnalytics && portfolioId && (
+        <PortfolioAnalytics portfolioId={portfolioId} username={portfolio.username} />
+      )}
+
+      {/* Theme Selector Section */}
+      <Card>
+        <CardHeader>
+          <h3 className="text-lg font-semibold text-gray-900">Portfolio Theme</h3>
+          <p className="text-sm text-gray-600 mt-1">Choose how your portfolio looks</p>
+        </CardHeader>
+        <CardBody>
+          <ThemeSelector 
+            selectedTheme={selectedTheme}
+            onSelect={setSelectedTheme}
+          />
+        </CardBody>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Editor Side */}
         <div className="space-y-6">
@@ -398,7 +445,7 @@ const PortfolioBuilder = () => {
                     />
                   </div>
                   <div className="text-sm text-gray-500 self-center">
-                    .hirepath.app
+                    .hiremind.app
                   </div>
                 </div>
                 {portfolio.username && (
@@ -411,7 +458,7 @@ const PortfolioBuilder = () => {
                   </p>
                 )}
                 <p className="text-xs text-gray-500 mt-1">
-                  hirepath.app/portfolio/{portfolio.username || 'your-username'}
+                  hiremind.app/portfolio/{portfolio.username || 'your-username'}
                 </p>
               </div>
               
@@ -490,6 +537,36 @@ const PortfolioBuilder = () => {
                       </Button>
                     </label>
                     <p className="text-xs text-gray-500 mt-1">JPG, PNG, WebP up to 5MB</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cover Image Upload */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Cover Image</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-32 h-20 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                    {portfolio.coverImage ? (
+                      <img src={portfolio.coverImage} alt="Cover" className="w-full h-full object-cover" />
+                    ) : (
+                      <PhotoIcon className="h-8 w-8 text-gray-400" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/jpg,image/webp"
+                      onChange={(e) => handleImageUpload('coverImage', e.target.files[0])}
+                      className="hidden"
+                      id="cover-upload"
+                    />
+                    <label htmlFor="cover-upload" className="cursor-pointer">
+                      <Button type="button" variant="outline" size="sm" isLoading={uploadingImage}>
+                        <PhotoIcon className="h-4 w-4 mr-1" />
+                        Upload Cover
+                      </Button>
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">Recommended: 1200x400px</p>
                   </div>
                 </div>
               </div>
@@ -653,6 +730,7 @@ const PortfolioBuilder = () => {
             <CardHeader>
               <h3 className="text-lg font-semibold text-gray-900">Live Preview</h3>
               <p className="text-sm text-gray-600 mt-1">How employers will see your portfolio</p>
+              <Badge variant="info" className="mt-2">Theme: {selectedTheme.charAt(0).toUpperCase() + selectedTheme.slice(1)}</Badge>
             </CardHeader>
             <CardBody>
               <div className="space-y-6">
@@ -674,22 +752,28 @@ const PortfolioBuilder = () => {
                   )}
                   <div className="flex gap-3 justify-center mt-3">
                     {portfolio.github && (
-                      <a href={portfolio.github} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700">
+                      <a href={portfolio.github} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700 text-sm">
                         GitHub
                       </a>
                     )}
                     {portfolio.linkedin && (
-                      <a href={portfolio.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700">
+                      <a href={portfolio.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700 text-sm">
                         LinkedIn
                       </a>
                     )}
                     {portfolio.twitter && (
-                      <a href={portfolio.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700">
+                      <a href={portfolio.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700 text-sm">
                         Twitter
                       </a>
                     )}
                   </div>
                 </div>
+
+                {portfolio.coverImage && (
+                  <div className="rounded-lg overflow-hidden">
+                    <img src={portfolio.coverImage} alt="Cover" className="w-full h-32 object-cover" />
+                  </div>
+                )}
 
                 {portfolio.bio && (
                   <div>

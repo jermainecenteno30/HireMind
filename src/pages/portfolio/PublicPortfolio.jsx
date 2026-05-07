@@ -1,56 +1,183 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { portfolioService } from '../../services/portfolioService';
+import { portfolioAnalyticsService } from '../../services/portfolioAnalyticsService';
 import { motion } from 'framer-motion';
 import { 
   BriefcaseIcon, 
   LinkIcon,
   UserIcon,
   GlobeAltIcon,
-  ArrowTopRightOnSquareIcon
+  ArrowTopRightOnSquareIcon,
+  DocumentTextIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
+import Button from '../../components/ui/Button';
+import toast from 'react-hot-toast';
+
+// Theme Imports
+import ThemeModern from '../../components/portfolio/themes/ThemeModern';
+import ThemeMinimalist from '../../components/portfolio/themes/ThemeMinimalist';
+import ThemeDark from '../../components/portfolio/themes/ThemeDark';
+
+// Contact Modal Component (inline for simplicity)
+const ContactModal = ({ isOpen, onClose, portfolioOwner, portfolioId }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+  const [sending, setSending] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.message) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    
+    setSending(true);
+    // Track contact click
+    if (portfolioId) {
+      await portfolioAnalyticsService.trackClick(portfolioId, 'contact');
+    }
+    
+    // In production, send to Firebase and email
+    setTimeout(() => {
+      toast.success('Message sent! The portfolio owner will contact you soon.');
+      setFormData({ name: '', email: '', message: '' });
+      onClose();
+      setSending(false);
+    }, 1000);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white rounded-xl max-w-md w-full"
+      >
+        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-900">Contact {portfolioOwner}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Your Name</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="John Doe"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Your Email</label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="john@example.com"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+            <textarea
+              value={formData.message}
+              onChange={(e) => setFormData({...formData, message: e.target.value})}
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Hi, I'm interested in your work..."
+              required
+            />
+          </div>
+          
+          <Button type="submit" isLoading={sending} className="w-full">
+            <EnvelopeIcon className="h-4 w-4 mr-2" />
+            Send Message
+          </Button>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
 
 const PublicPortfolio = () => {
   const { username } = useParams();
   const [portfolio, setPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedTheme, setSelectedTheme] = useState('modern');
+  const [showContactModal, setShowContactModal] = useState(false);
 
   useEffect(() => {
     loadPortfolio();
   }, [username]);
 
+  // Load saved theme preference
   useEffect(() => {
-    if (portfolio) {
-      document.title = `${portfolio.displayName || portfolio.username}'s Portfolio | HirePath`;
-      
-      // Update meta tags for SEO
-      let metaDescription = document.querySelector('meta[name="description"]');
-      if (!metaDescription) {
-        metaDescription = document.createElement('meta');
-        metaDescription.setAttribute('name', 'description');
-        document.head.appendChild(metaDescription);
-      }
-      metaDescription.setAttribute('content', portfolio.bio?.substring(0, 150) || 'View professional portfolio');
-      
-      // OpenGraph tags
-      let ogTitle = document.querySelector('meta[property="og:title"]');
-      if (!ogTitle) {
-        ogTitle = document.createElement('meta');
-        ogTitle.setAttribute('property', 'og:title');
-        document.head.appendChild(ogTitle);
-      }
-      ogTitle.setAttribute('content', `${portfolio.displayName || portfolio.username}'s Portfolio`);
-      
-      let ogDescription = document.querySelector('meta[property="og:description"]');
-      if (!ogDescription) {
-        ogDescription = document.createElement('meta');
-        ogDescription.setAttribute('property', 'og:description');
-        document.head.appendChild(ogDescription);
-      }
-      ogDescription.setAttribute('content', portfolio.bio?.substring(0, 150) || 'Professional portfolio');
+    if (portfolio?.id) {
+      const savedTheme = localStorage.getItem(`portfolio_theme_${portfolio.id}`);
+      if (savedTheme) setSelectedTheme(savedTheme);
     }
   }, [portfolio]);
+
+  // Track view and setup click tracking
+  useEffect(() => {
+    if (portfolio?.id) {
+      // Track portfolio view
+      portfolioAnalyticsService.trackView(portfolio.id, username);
+      
+      // Setup click tracking for links
+      const trackClick = (type, id = null) => {
+        portfolioAnalyticsService.trackClick(portfolio.id, type, id);
+      };
+      
+      // Add event listeners to track clicks
+      const githubLink = document.querySelector('a[href*="github.com"]');
+      const linkedinLink = document.querySelector('a[href*="linkedin.com"]');
+      const twitterLink = document.querySelector('a[href*="twitter.com"]');
+      const projectLinks = document.querySelectorAll('.project-link');
+      const resumeBtn = document.querySelector('#download-resume-btn');
+      const contactBtn = document.querySelector('#contact-btn');
+      
+      if (githubLink) githubLink.addEventListener('click', () => trackClick('github'));
+      if (linkedinLink) linkedinLink.addEventListener('click', () => trackClick('linkedin'));
+      if (twitterLink) twitterLink.addEventListener('click', () => trackClick('twitter'));
+      if (resumeBtn) resumeBtn.addEventListener('click', () => trackClick('resume'));
+      if (contactBtn) contactBtn.addEventListener('click', () => trackClick('contact'));
+      
+      projectLinks.forEach(link => {
+        link.addEventListener('click', () => trackClick('project', link.dataset.projectId));
+      });
+      
+      return () => {
+        if (githubLink) githubLink.removeEventListener('click', () => trackClick('github'));
+        if (linkedinLink) linkedinLink.removeEventListener('click', () => trackClick('linkedin'));
+        if (twitterLink) twitterLink.removeEventListener('click', () => trackClick('twitter'));
+        if (resumeBtn) resumeBtn.removeEventListener('click', () => trackClick('resume'));
+        if (contactBtn) contactBtn.removeEventListener('click', () => trackClick('contact'));
+        projectLinks.forEach(link => {
+          link.removeEventListener('click', () => trackClick('project', link.dataset.projectId));
+        });
+      };
+    }
+  }, [portfolio, username]);
 
   const loadPortfolio = async () => {
     setLoading(true);
@@ -61,6 +188,35 @@ const PublicPortfolio = () => {
       setError('Portfolio not found');
     }
     setLoading(false);
+  };
+
+  const handleDownloadResume = () => {
+    if (portfolio?.id) {
+      portfolioAnalyticsService.trackClick(portfolio.id, 'resume');
+      
+      // In production, generate and download PDF
+      // For now, show toast
+      toast.success('Resume download started');
+      
+      // You can implement actual PDF generation here
+      // window.open(`/api/resume/download/${portfolio.id}`, '_blank');
+    }
+  };
+
+  const handleContact = () => {
+    setShowContactModal(true);
+  };
+
+  // Get theme component based on selection
+  const getThemeComponent = () => {
+    switch(selectedTheme) {
+      case 'minimalist':
+        return ThemeMinimalist;
+      case 'dark':
+        return ThemeDark;
+      default:
+        return ThemeModern;
+    }
   };
 
   if (loading) {
@@ -83,6 +239,36 @@ const PublicPortfolio = () => {
     );
   }
 
+  // Update theme when selected (for theme selector in builder)
+  const ThemeComponent = getThemeComponent();
+
+  // If user has selected a theme in the builder
+  if (selectedTheme !== 'modern') {
+    return (
+      <>
+        {/* SEO Meta Tags */}
+        <title>{portfolio.displayName || portfolio.username}'s Portfolio | HireMind</title>
+        <meta name="description" content={portfolio.bio?.substring(0, 150) || 'View professional portfolio'} />
+        <meta property="og:title" content={`${portfolio.displayName || portfolio.username}'s Portfolio`} />
+        <meta property="og:description" content={portfolio.bio?.substring(0, 150)} />
+        
+        <ThemeComponent 
+          portfolio={portfolio}
+          onDownloadResume={handleDownloadResume}
+          onContact={handleContact}
+        />
+        
+        <ContactModal 
+          isOpen={showContactModal}
+          onClose={() => setShowContactModal(false)}
+          portfolioOwner={portfolio.displayName || portfolio.username}
+          portfolioId={portfolio.id}
+        />
+      </>
+    );
+  }
+
+  // Default modern theme with additional features
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
@@ -205,7 +391,8 @@ const PublicPortfolio = () => {
                           href={project.link} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="inline-flex items-center text-sm text-primary-600 hover:text-primary-700"
+                          className="project-link inline-flex items-center text-sm text-primary-600 hover:text-primary-700"
+                          data-project-id={project.id}
                         >
                           View Project <ArrowTopRightOnSquareIcon className="w-4 h-4 ml-1" />
                         </a>
@@ -216,6 +403,26 @@ const PublicPortfolio = () => {
               </div>
             </motion.div>
           )}
+
+          {/* Action Buttons */}
+          <div className="mt-6 flex gap-4">
+            <button
+              id="download-resume-btn"
+              onClick={handleDownloadResume}
+              className="flex-1 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition flex items-center justify-center gap-2"
+            >
+              <DocumentTextIcon className="h-4 w-4" />
+              Download Resume
+            </button>
+            <button
+              id="contact-btn"
+              onClick={handleContact}
+              className="flex-1 border border-primary-600 text-primary-600 px-4 py-2 rounded-lg hover:bg-primary-50 transition flex items-center justify-center gap-2"
+            >
+              <EnvelopeIcon className="h-4 w-4" />
+              Contact Me
+            </button>
+          </div>
 
           {/* Empty State */}
           {!portfolio.bio && portfolio.projects.length === 0 && (
@@ -232,10 +439,18 @@ const PublicPortfolio = () => {
 
           {/* Footer */}
           <div className="mt-8 text-center text-sm text-gray-500">
-            <p>Portfolio created with HirePath</p>
+            <p>Portfolio created with HireMind</p>
           </div>
         </div>
       </div>
+
+      {/* Contact Modal */}
+      <ContactModal 
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
+        portfolioOwner={portfolio.displayName || portfolio.username}
+        portfolioId={portfolio.id}
+      />
     </>
   );
 };
