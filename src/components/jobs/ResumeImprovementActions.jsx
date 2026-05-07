@@ -13,8 +13,14 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
+// TEMPORARY: Force free access for testing - Set to false for production
+const FORCE_FREE_ACCESS = true;
+
 const ResumeImprovementActions = ({ resumeContent, resumeId, onUpdate }) => {
-  const { isPremium } = useAuth();
+  const { isPremium: userIsPremium } = useAuth();
+  // Allow free access for testing
+  const hasAccess = FORCE_FREE_ACCESS || userIsPremium;
+  
   const { optimizeResume, generateAtsBullet, rewriteSection, isProcessing } = useAI();
   const [actionType, setActionType] = useState(null);
   const [result, setResult] = useState(null);
@@ -52,8 +58,8 @@ const ResumeImprovementActions = ({ resumeContent, resumeId, onUpdate }) => {
   ];
 
   const handleAction = async (action) => {
-    if (!isPremium) {
-      toast.error('Premium feature. Upgrade to use resume improvement tools!');
+    if (!hasAccess) {
+      toast.error('Please login to use resume improvement tools');
       return;
     }
 
@@ -102,13 +108,17 @@ const ResumeImprovementActions = ({ resumeContent, resumeId, onUpdate }) => {
     toast.info('Changes discarded');
   };
 
-  if (!isPremium) {
+  // If no access, show login prompt (not upgrade prompt)
+  if (!hasAccess) {
     return (
       <Card>
         <CardBody className="text-center py-6">
           <SparklesIcon className="h-8 w-8 text-primary-600 mx-auto mb-2" />
           <p className="text-sm font-medium text-gray-900">AI Resume Improvement</p>
-          <p className="text-xs text-gray-500 mt-1">Upgrade to Premium to use AI tools</p>
+          <p className="text-xs text-gray-500 mt-1">Please login to use AI tools</p>
+          <Button size="sm" className="mt-3" onClick={() => window.location.href = '/login'}>
+            Login to Continue
+          </Button>
         </CardBody>
       </Card>
     );
