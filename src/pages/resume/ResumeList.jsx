@@ -5,7 +5,7 @@ import Card, { CardBody, CardHeader } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Input from '../../components/ui/Input';
-import ResumeBuilder from '../../components/resume/ResumeBuilderV2';
+import ResumeBuilderV2 from '../../components/resume/ResumeBuilderV2';
 import { ModernTemplate, MinimalTemplate, CorporateTemplate, TemplateSelector } from '../../components/resume/ResumeTemplates';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -464,7 +464,7 @@ const ResumeList = () => {
                 </div>
                 
                 {/* Resume Builder Component */}
-                <ResumeBuilder
+                <ResumeBuilderV2
                   initialData={formData.structuredData}
                   onSave={handleSubmit}
                   onCancel={() => {
