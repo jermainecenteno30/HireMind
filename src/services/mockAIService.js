@@ -193,7 +193,7 @@ export const mockAIService = {
     const recommendations = [];
     if (missingSkills.includes("TypeScript")) recommendations.push("Add TypeScript to your skills section - it's highly requested for this role");
     if (missingSkills.includes("React")) recommendations.push("React is essential for this role - consider adding it to your skills");
-    if (missingSkills.includes("Node.js")) recommendations.push("Include Node.js in your backend skills section");
+        if (missingSkills.includes("Node.js")) recommendations.push("Include Node.js in your backend skills section");
     if (missingSkills.includes("Git")) recommendations.push("Highlight your experience with version control (Git)");
     if (matchScore < 70) recommendations.push("Add more specific project examples related to this role");
     recommendations.push("Tailor your resume's professional summary to highlight relevant experience");
@@ -385,7 +385,7 @@ ${resumeContent ? resumeContent.substring(0, 500) : 'Your resume content here'}
     return recommendations.slice(0, 5);
   },
 
-  // NEW: AI Follow-up Suggestion for Job Applications
+  // AI Follow-up Suggestion for Job Applications
   async getFollowUpSuggestion(job) {
     console.log('📝 Mock AI (Free Tier): Generating follow-up suggestion for', job.company);
     
@@ -394,7 +394,6 @@ ${resumeContent ? resumeContent.substring(0, 500) : 'Your resume content here'}
     const daysSinceApplied = Math.floor((Date.now() - new Date(job.dateApplied)) / (1000 * 60 * 60 * 24));
     const status = job.status;
     
-    // Status-based suggestions
     if (status === 'hired') {
       return "🎉 Congratulations on the offer! Send a thank you note, review the offer details carefully, and complete onboarding paperwork. Consider negotiating if the offer doesn't meet your expectations.";
     }
@@ -407,7 +406,6 @@ ${resumeContent ? resumeContent.substring(0, 500) : 'Your resume content here'}
       return "🎯 Prepare for your interview: Research the company culture on Glassdoor, practice common questions using the STAR method, prepare 3-5 thoughtful questions to ask, and test your tech setup if it's a video interview.";
     }
     
-    // Time-based suggestions for 'applied' status
     if (daysSinceApplied > 21) {
       return `⏰ It's been ${daysSinceApplied} days without response. Consider sending a polite follow-up email. If no response after 2 follow-ups, focus your energy on new applications. Keep your momentum going!`;
     } else if (daysSinceApplied > 14) {
@@ -417,6 +415,105 @@ ${resumeContent ? resumeContent.substring(0, 500) : 'Your resume content here'}
     } else {
       return `✅ Your application is still fresh (${daysSinceApplied} days old). Keep applying to 5-10 jobs per week while waiting for responses. Don't put all your eggs in one basket - diversify your applications!`;
     }
+  },
+
+  // NEW: Parse Job Description (Extract company, role, salary, skills)
+  async parseJobDescription(content, inputType) {
+    console.log('📝 Mock AI (Free Tier): Parsing job description');
+    
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
+    // Simple parsing logic
+    const lines = content.split('\n');
+    let company = '';
+    let role = '';
+    let salary = '';
+    let experience = '';
+    const skills = [];
+    const keywords = [];
+    
+    const skillKeywords = ['react', 'javascript', 'python', 'java', 'node', 'aws', 'docker', 'typescript', 'html', 'css', 'sql', 'git', 'mongodb', 'postgresql'];
+    const companyKeywords = ['company', 'about us', 'our company', 'who we are'];
+    const roleKeywords = ['role', 'position', 'title', 'job title', 'we are looking for'];
+    const salaryKeywords = ['salary', 'compensation', 'pay', 'range'];
+    const experienceKeywords = ['experience required', 'years of experience', 'experience level'];
+    
+    lines.forEach(line => {
+      const lowerLine = line.toLowerCase();
+      
+      companyKeywords.forEach(keyword => {
+        if (lowerLine.includes(keyword) && !company) {
+          company = line.replace(new RegExp(keyword, 'i'), '').trim();
+        }
+      });
+      
+      roleKeywords.forEach(keyword => {
+        if (lowerLine.includes(keyword) && !role) {
+          role = line.replace(new RegExp(keyword, 'i'), '').trim();
+        }
+      });
+      
+      salaryKeywords.forEach(keyword => {
+        if (lowerLine.includes(keyword) && !salary) {
+          const match = line.match(/[\d,]+/);
+          if (match) salary = match[0];
+        }
+      });
+      
+      experienceKeywords.forEach(keyword => {
+        if (lowerLine.includes(keyword) && !experience) {
+          const match = line.match(/\d+-\d+|\d+\+/);
+          if (match) experience = match[0];
+        }
+      });
+      
+      skillKeywords.forEach(skill => {
+        if (lowerLine.includes(skill) && !skills.includes(skill)) {
+          skills.push(skill.charAt(0).toUpperCase() + skill.slice(1));
+        }
+      });
+    });
+    
+    // Extract keywords from first 500 chars
+    const words = content.slice(0, 500).split(/\s+/);
+    words.forEach(word => {
+      if (word.length > 5 && !keywords.includes(word) && !skillKeywords.includes(word.toLowerCase())) {
+        keywords.push(word);
+      }
+    });
+    
+    return {
+      company: company || 'Not detected',
+      role: role || 'Not detected',
+      salary: salary ? `₱${salary}` : 'Not specified',
+      experience: experience || 'Not specified',
+      skills: [...new Set(skills)].slice(0, 10),
+      keywords: keywords.slice(0, 15)
+    };
+  },
+
+  // NEW: Generate ATS bullet point
+  async generateAtsBullet(resumeContent, type = 'bullet') {
+    console.log('📝 Mock AI (Free Tier): Generating ATS bullet');
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    if (type === 'skills') {
+      return "Recommended skills to add: React.js, TypeScript, Node.js, AWS Cloud, Docker, Git, PostgreSQL, MongoDB";
+    }
+    
+    return "• Led a team of 5 developers to successfully deliver a high-impact project, resulting in 30% increase in user engagement and 25% improvement in performance metrics";
+  },
+
+  // NEW: Rewrite resume section
+  async rewriteSection(resumeContent, section = 'summary') {
+    console.log('📝 Mock AI (Free Tier): Rewriting section', section);
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return `[AI Improved - ${section.toUpperCase()}]
+      
+Results-driven professional with 5+ years of experience in software development. Proven track record of delivering high-quality solutions and leading successful projects. Passionate about leveraging cutting-edge technologies to solve complex problems and drive business growth.`;
   },
 
   isRealAIAvailable() {

@@ -158,6 +158,33 @@ const getGeminiFallback = (type, data) => {
         : `Wait a bit longer (${14 - daysSinceApplied} days). Prepare for potential interviews.`
     };
   }
+
+  if (type === 'parseJob') {
+    return {
+      company: "Tech Solutions Inc.",
+      role: "Software Developer",
+      salary: "₱80,000 - ₱120,000",
+      experience: "2-4 years",
+      skills: ["JavaScript", "React", "Node.js", "Git"],
+      keywords: ["software", "developer", "fullstack", "web", "react"]
+    };
+  }
+
+  if (type === 'atsBullet') {
+    return {
+      result: data?.type === 'skills' 
+        ? "Recommended skills to add: React.js, TypeScript, Node.js, AWS Cloud, Docker, Git"
+        : "• Led a team of 5 developers to successfully deliver a high-impact project, resulting in 30% increase in user engagement and 25% improvement in performance metrics"
+    };
+  }
+
+  if (type === 'rewriteSection') {
+    return {
+      result: `[AI Improved - ${data?.section?.toUpperCase() || 'SUMMARY'}]
+      
+Results-driven professional with 5+ years of experience in software development. Proven track record of delivering high-quality solutions and leading successful projects. Passionate about leveraging cutting-edge technologies to solve complex problems and drive business growth.`
+    };
+  }
   
   return {};
 };
@@ -488,7 +515,7 @@ Return ONLY valid JSON (no extra text):
     }
   },
 
-  // NEW: AI Follow-up Suggestion for Job Applications
+  // AI Follow-up Suggestion for Job Applications
   async getFollowUpSuggestion(job) {
     console.log('📝 Gemini: Generating follow-up suggestion for', job.company);
     
@@ -520,6 +547,124 @@ Provide ONE specific, actionable suggestion (2-3 sentences max). Be professional
     } catch (error) {
       console.error('Gemini Follow-up Error:', error);
       return getFallbackFollowUpSuggestion(job);
+    }
+  },
+
+  // NEW: Parse Job Description (Extract company, role, salary, skills)
+  async parseJobDescription(content, inputType) {
+    console.log('📝 Gemini: Parsing job description');
+    
+    if (!hasValidApiKey || !model) {
+      console.log('📝 Gemini unavailable, using fallback for parsing');
+      return getGeminiFallback('parseJob');
+    }
+
+    try {
+      await rateLimiter.waitIfNeeded();
+      
+      const prompt = `Parse this job description and extract key information:
+
+${content.substring(0, 3000)}
+
+Return ONLY valid JSON (no extra text):
+{
+  "company": "Company name",
+  "role": "Job title/role",
+  "salary": "Salary information (if mentioned)",
+  "experience": "Experience required",
+  "skills": ["skill1", "skill2", "skill3"],
+  "keywords": ["keyword1", "keyword2"]
+}
+
+If information is not found, use "Not specified" or empty array.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+      return JSON.parse(text);
+      
+    } catch (error) {
+      console.error('Gemini Parse Error:', error);
+      return getGeminiFallback('parseJob');
+    }
+  },
+
+  // NEW: Generate ATS bullet point
+  async generateAtsBullet(resumeContent, type = 'bullet') {
+    console.log('📝 Gemini: Generating ATS bullet');
+    
+    if (!hasValidApiKey || !model) {
+      console.log('📝 Gemini unavailable, using fallback for ATS bullet');
+      const fallback = getGeminiFallback('atsBullet', { type });
+      return fallback.result;
+    }
+
+    try {
+      await rateLimiter.waitIfNeeded();
+      
+      const prompt = type === 'skills' 
+        ? `Based on this resume, suggest 5-7 key skills to add for better ATS optimization:
+
+${resumeContent?.substring(0, 1000) || 'No resume content'}
+
+Return ONLY a comma-separated list of skills.`
+        : `Create a stronger, more impactful bullet point for this resume experience section:
+
+${resumeContent?.substring(0, 500) || 'No content'}
+
+Return ONLY a single bullet point (starting with •) that includes quantifiable achievements and strong action verbs.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const content = response.text().trim();
+      
+      return content || (type === 'skills' 
+        ? "JavaScript, React, TypeScript, Node.js, Git, AWS, Docker"
+        : "• Led team projects resulting in 30% efficiency increase and 25% user engagement growth");
+      
+    } catch (error) {
+      console.error('Gemini ATS Bullet Error:', error);
+      const fallback = getGeminiFallback('atsBullet', { type });
+      return fallback.result;
+    }
+  },
+
+  // NEW: Rewrite resume section
+  async rewriteSection(resumeContent, section = 'summary') {
+    console.log('📝 Gemini: Rewriting section', section);
+    
+    if (!hasValidApiKey || !model) {
+      console.log('📝 Gemini unavailable, using fallback for rewrite');
+      const fallback = getGeminiFallback('rewriteSection', { section });
+      return fallback.result;
+    }
+
+    try {
+      await rateLimiter.waitIfNeeded();
+      
+      const prompt = `Rewrite and improve this ${section} section of a resume. Make it more professional, impactful, and ATS-friendly:
+
+${resumeContent?.substring(0, 1000) || 'No content'}
+
+Return ONLY the improved text (no explanations, no JSON formatting).`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const rewritten = response.text().trim();
+      
+      return rewritten || `[Improved ${section.toUpperCase()}]
+      
+Results-driven professional with proven track record of success. Skilled in delivering high-quality solutions and leading impactful projects.`;
+      
+    } catch (error) {
+      console.error('Gemini Rewrite Error:', error);
+      const fallback = getGeminiFallback('rewriteSection', { section });
+      return fallback.result;
     }
   },
 
