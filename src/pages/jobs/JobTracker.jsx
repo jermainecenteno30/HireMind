@@ -498,7 +498,7 @@ const JobTracker = () => {
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setViewMode(viewMode === 'list' ? 'kanban' : 'list')}>
             {viewMode === 'list' ? (
-              <><ViewColumnsIcon className="h-4 w-4 mr-2" />Kanban View</>
+              <><ViewColumnsIcon className="h-4 w-4 mr-2" />Board View</>
             ) : (
               <><Squares2X2Icon className="h-4 w-4 mr-2" />List View</>
             )}
