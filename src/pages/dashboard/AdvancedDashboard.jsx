@@ -7,7 +7,7 @@ import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import { useAI } from '../../context/AIContext';
 import ResumeAnalytics from '../../components/dashboard/ResumeAnalytics';
-import { TrophyIcon, FireIcon, BellAlertIcon, DocumentChartBarIcon } from '@heroicons/react/24/outline';
+import { TrophyIcon, FireIcon, BellAlertIcon, DocumentChartBarIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import { 
   BriefcaseIcon, 
@@ -41,11 +41,11 @@ import toast from 'react-hot-toast';
 const FORCE_PREMIUM_TESTING = true;
 
 // Storage keys for AI memory
-const AI_INSIGHTS_STORAGE_KEY = 'hirepath_ai_insights';
-const AI_SKILLS_STORAGE_KEY = 'hirepath_ai_skills';
+const AI_INSIGHTS_STORAGE_KEY = 'hiremind_ai_insights';
+const AI_SKILLS_STORAGE_KEY = 'hiremind_ai_skills';
 
 const AdvancedDashboard = () => {
-  const { userData, isPremium: userIsPremium } = useAuth();
+  const { user, userData, isPremium: userIsPremium } = useAuth();
   // Override premium for testing
   const isPremium = FORCE_PREMIUM_TESTING || userIsPremium;
   
@@ -75,21 +75,22 @@ const AdvancedDashboard = () => {
   
   const stats = getStats();
   
-  // Detect user's role from jobs or resumes
-  const detectedRole = jobs[0]?.role || 
+  // Detect user's role from jobs or resumes (only if user is logged in)
+  const detectedRole = user ? (jobs[0]?.role || 
                        resumes[0]?.tags?.[0] || 
                        userData?.title || 
-                       'Software Developer';
+                       'Software Developer') : 'Software Developer';
   
-  // Detect experience level based on total applications
-  const experienceLevel = stats.total > 30 ? 'senior' : stats.total > 15 ? 'intermediate' : 'entry';
+  // Detect experience level based on total applications (only if user is logged in)
+  const experienceLevel = user ? (stats.total > 30 ? 'senior' : stats.total > 15 ? 'intermediate' : 'entry') : 'entry';
   
-  // Calculate streak (consecutive days with applications) - FIXED: Only runs when jobs change
+  // Calculate streak (consecutive days with applications) - Only when user is logged in
   useEffect(() => {
+    if (!user) return;
+    
     const calculateStreak = () => {
       if (jobs.length === 0) return 0;
       
-      // Get unique dates and sort descending
       const dates = [...new Set(jobs.map(j => new Date(j.dateApplied).toDateString()))];
       dates.sort((a, b) => new Date(b) - new Date(a));
       
@@ -97,12 +98,10 @@ const AdvancedDashboard = () => {
       const today = new Date().toDateString();
       const yesterday = new Date(Date.now() - 86400000).toDateString();
       
-      // Check if last application is today or yesterday
       if (dates[0] !== today && dates[0] !== yesterday) {
         return 0;
       }
       
-      // Calculate consecutive days
       for (let i = 0; i < dates.length - 1; i++) {
         const currentDate = new Date(dates[i]);
         const nextDate = new Date(dates[i + 1]);
@@ -122,11 +121,12 @@ const AdvancedDashboard = () => {
     if (streak !== newStreak) {
       setStreak(newStreak);
     }
-  }, [jobs]); // Only run when jobs change
+  }, [jobs, user]);
   
-  // Generate smart notifications - FIXED: Only runs when jobs stats change significantly
+  // Generate smart notifications - Only when user is logged in
   useEffect(() => {
-    // Check if stats actually changed to prevent infinite loop
+    if (!user) return;
+    
     const statsChanged = prevStatsRef.current.total !== stats.total || 
                          prevStatsRef.current.interview !== stats.interview || 
                          prevStatsRef.current.hired !== stats.hired;
@@ -140,7 +140,6 @@ const AdvancedDashboard = () => {
     
     const newNotifications = [];
     
-    // Check for inactivity
     const lastApplication = jobs[0]?.dateApplied;
     if (lastApplication) {
       const daysSinceLastApp = Math.floor((Date.now() - new Date(lastApplication)) / (1000 * 60 * 60 * 24));
@@ -154,7 +153,6 @@ const AdvancedDashboard = () => {
       }
     }
     
-    // Check response rate drop
     const responseRateValue = stats.total > 0 ? ((stats.interview + stats.hired) / stats.total * 100) : 0;
     const savedRate = localStorage.getItem('previous_response_rate');
     const previousRate = savedRate ? parseFloat(savedRate) : null;
@@ -168,16 +166,14 @@ const AdvancedDashboard = () => {
       });
     }
     
-    // Only update if notifications changed
     if (JSON.stringify(notifications) !== JSON.stringify(newNotifications)) {
       setNotifications(newNotifications);
     }
     
-    // Save current rate for future comparison
     if (stats.total > 0 && Math.abs(responseRateValue - (parseFloat(localStorage.getItem('previous_response_rate') || '0'))) > 1) {
       localStorage.setItem('previous_response_rate', responseRateValue.toFixed(1));
     }
-  }, [jobs.length, stats.total, stats.interview, stats.hired]);
+  }, [jobs.length, stats.total, stats.interview, stats.hired, user]);
   
   // Load saved AI results from localStorage (AI Memory) - Runs once on mount
   useEffect(() => {
@@ -198,10 +194,12 @@ const AdvancedDashboard = () => {
         console.error('Error loading saved skills:', e);
       }
     }
-  }, []); // Empty dependency array - runs once on mount
+  }, []);
   
-  // Generate weekly report - FIXED: Only runs when jobs change
+  // Generate weekly report - Only when user is logged in
   useEffect(() => {
+    if (!user) return;
+    
     const generateWeeklyReport = () => {
       const lastWeekJobs = jobs.filter(job => {
         const jobDate = new Date(job.dateApplied);
@@ -225,7 +223,7 @@ const AdvancedDashboard = () => {
     };
     
     generateWeeklyReport();
-  }, [jobs]); // Only run when jobs change
+  }, [jobs, user]);
   
   // Debug log to confirm premium status
   useEffect(() => {
@@ -236,13 +234,16 @@ const AdvancedDashboard = () => {
       activeTab,
       isRealAI,
       detectedRole,
-      experienceLevel
+      experienceLevel,
+      isLoggedIn: !!user
     });
-  }, [isPremium, activeTab, isRealAI]);
+  }, [isPremium, activeTab, isRealAI, user]);
   
-  // Calculate weekly progress for goal tracking
+  // Calculate weekly progress for goal tracking (only if user is logged in)
   const calculateWeeklyGoal = () => {
-    const weeklyGoal = 10; // Target: 10 applications per week
+    if (!user) return { current: 0, goal: 10, percent: 0 };
+    
+    const weeklyGoal = 10;
     const weeks = {};
     jobs.forEach(job => {
       const date = new Date(job.dateApplied);
@@ -256,8 +257,10 @@ const AdvancedDashboard = () => {
   
   const weeklyGoalData = calculateWeeklyGoal();
   
-  // Calculate weekly progress chart data
+  // Calculate weekly progress chart data (only if user is logged in)
   const getWeeklyProgress = () => {
+    if (!user) return [];
+    
     const weeks = {};
     jobs.forEach(job => {
       const date = new Date(job.dateApplied);
@@ -275,25 +278,25 @@ const AdvancedDashboard = () => {
 
   const weeklyData = getWeeklyProgress();
   
-  // Response rate by status
-  const statusData = [
+  // Response rate by status (only if user is logged in)
+  const statusData = user ? [
     { name: 'Applied', value: stats.applied, color: '#0ea5e9' },
     { name: 'Interview', value: stats.interview, color: '#f59e0b' },
     { name: 'Rejected', value: stats.rejected, color: '#ef4444' },
     { name: 'Hired', value: stats.hired, color: '#10b981' }
-  ].filter(d => d.value > 0);
+  ].filter(d => d.value > 0) : [];
 
-  const responseRate = stats.total > 0 
+  const responseRate = user && stats.total > 0 
     ? ((stats.interview + stats.hired) / stats.total * 100).toFixed(1)
     : 0;
 
-  const successRate = stats.total > 0 
+  const successRate = user && stats.total > 0 
     ? (stats.hired / stats.total * 100).toFixed(1)
     : 0;
 
   // Generate AI-powered insights - ONLY when button is clicked with cooldown
   const generateAIInsights = async () => {
-    if (!isPremium) return;
+    if (!isPremium || !user) return;
     if (loadingInsights) return;
     
     const now = Date.now();
@@ -312,7 +315,6 @@ const AdvancedDashboard = () => {
       const result = await getCareerInsights(jobs, resumes.length);
       if (result) {
         setAiInsights(result);
-        // Save to localStorage for persistence
         localStorage.setItem(AI_INSIGHTS_STORAGE_KEY, JSON.stringify(result));
         toast.success('Insights generated successfully!', { id: loadingToast });
       } else {
@@ -328,7 +330,7 @@ const AdvancedDashboard = () => {
 
   // Generate skill recommendations - Context-aware (detects role and level)
   const generateSkillRecommendations = async () => {
-    if (!isPremium) return;
+    if (!isPremium || !user) return;
     if (loadingSkills) return;
     
     const now = Date.now();
@@ -345,7 +347,6 @@ const AdvancedDashboard = () => {
     
     try {
       const userSkills = resumes.flatMap(r => r.tags || []);
-      // Context-aware: uses detected role and experience level
       const result = await getSkillRecommendations(detectedRole, userSkills, experienceLevel);
       if (result) {
         setSkillRecommendations(result);
@@ -395,8 +396,25 @@ const AdvancedDashboard = () => {
         </div>
       )}
 
-      {/* Streak Banner */}
-      {streak > 0 && (
+      {/* Show Login Prompt if not logged in */}
+      {!user && (
+        <div className="bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg p-6 text-center">
+          <LockClosedIcon className="h-12 w-12 text-primary-600 mx-auto mb-3" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Login to Unlock Full Features</h2>
+          <p className="text-gray-600 mb-4">
+            Sign in to track your job applications, create resumes, and get AI-powered career insights.
+          </p>
+          <Button onClick={() => window.location.href = '/login'}>
+            Login to Your Account
+          </Button>
+          <p className="text-sm text-gray-500 mt-3">
+            Don't have an account? <a href="/signup" className="text-primary-600 hover:underline">Sign up for free</a>
+          </p>
+        </div>
+      )}
+
+      {/* Streak Banner - Only show when logged in */}
+      {user && streak > 0 && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
           <div className="flex items-center gap-3">
             <FireIcon className="h-6 w-6 text-orange-500" />
@@ -408,8 +426,8 @@ const AdvancedDashboard = () => {
         </div>
       )}
 
-      {/* Notifications Banner */}
-      {notifications.length > 0 && (
+      {/* Notifications Banner - Only show when logged in */}
+      {user && notifications.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <div className="flex items-start gap-3">
             <BellAlertIcon className="h-5 w-5 text-blue-500 mt-0.5" />
@@ -425,8 +443,8 @@ const AdvancedDashboard = () => {
         </div>
       )}
 
-      {/* Weekly Report Banner */}
-      {weeklyReport && weeklyReport.applications > 0 && (
+      {/* Weekly Report Banner - Only show when logged in */}
+      {user && weeklyReport && weeklyReport.applications > 0 && (
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
           <div className="flex items-center gap-3">
             <DocumentChartBarIcon className="h-6 w-6 text-purple-500" />
@@ -447,22 +465,24 @@ const AdvancedDashboard = () => {
       <div className="flex justify-between items-start flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back, {userData?.displayName || 'Career Seeker'}! 👋
+            Welcome to HireMind, {user ? (userData?.displayName || 'Career Seeker') : 'Career Seeker'}! 👋
           </h1>
           <p className="text-gray-600 mt-2">
-            Here's your career progress at a glance
+            {user ? "Here's your career progress at a glance" : "Track your career journey and land your dream job"}
           </p>
-          <p className="text-sm text-gray-500 mt-1">
-            🎯 Target Role: {detectedRole} • Level: {experienceLevel}
-          </p>
+          {user && (
+            <p className="text-sm text-gray-500 mt-1">
+              🎯 Target Role: {detectedRole} • Level: {experienceLevel}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
-          {isRealAI && (
+          {user && isRealAI && (
             <Badge variant="success" className="px-3 py-1">
               🤖 Real AI Active
             </Badge>
           )}
-          {streak > 0 && (
+          {user && streak > 0 && (
             <Badge variant="warning" className="px-3 py-1">
               🔥 {streak} Day Streak
             </Badge>
@@ -470,28 +490,30 @@ const AdvancedDashboard = () => {
         </div>
       </div>
 
-      {/* Goal Tracking Progress Bar */}
-      <Card>
-        <CardBody>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-700">Weekly Goal Progress</span>
-            <span className="text-sm font-medium text-primary-600">
-              {weeklyGoalData.current}/{weeklyGoalData.goal} applications
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div 
-              className="bg-primary-600 rounded-full h-2.5 transition-all duration-500"
-              style={{ width: `${weeklyGoalData.percent}%` }}
-            />
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            {weeklyGoalData.percent >= 100 
-              ? '🎉 Congratulations! You\'ve reached your weekly goal!' 
-              : `📈 You're ${weeklyGoalData.percent.toFixed(0)}% to your weekly goal. ${weeklyGoalData.goal - weeklyGoalData.current} more applications needed.`}
-          </p>
-        </CardBody>
-      </Card>
+      {/* Goal Tracking Progress Bar - Only show when logged in */}
+      {user && (
+        <Card>
+          <CardBody>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-gray-700">Weekly Goal Progress</span>
+              <span className="text-sm font-medium text-primary-600">
+                {weeklyGoalData.current}/{weeklyGoalData.goal} applications
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div 
+                className="bg-primary-600 rounded-full h-2.5 transition-all duration-500"
+                style={{ width: `${weeklyGoalData.percent}%` }}
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {weeklyGoalData.percent >= 100 
+                ? '🎉 Congratulations! You\'ve reached your weekly goal!' 
+                : `📈 You're ${weeklyGoalData.percent.toFixed(0)}% to your weekly goal. ${weeklyGoalData.goal - weeklyGoalData.current} more applications needed.`}
+            </p>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
@@ -540,15 +562,15 @@ const AdvancedDashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          {/* Key Metrics */}
+          {/* Key Metrics - Show demo metrics if not logged in */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card hover>
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Total Applications</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
-                    <p className="text-xs text-green-600 mt-2">+{stats.total > 0 ? Math.floor(Math.random() * 20) : 0}% from last month</p>
+                    <p className="text-3xl font-bold text-gray-900">{user ? stats.total : '—'}</p>
+                    {user && <p className="text-xs text-green-600 mt-2">+{stats.total > 0 ? Math.floor(Math.random() * 20) : 0}% from last month</p>}
                   </div>
                   <div className="h-12 w-12 bg-primary-100 rounded-lg flex items-center justify-center">
                     <BriefcaseIcon className="h-6 w-6 text-primary-600" />
@@ -562,8 +584,8 @@ const AdvancedDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Response Rate</p>
-                    <p className="text-3xl font-bold text-gray-900">{responseRate}%</p>
-                    <p className="text-xs text-green-600 mt-2">{stats.interview} interviews</p>
+                    <p className="text-3xl font-bold text-gray-900">{user ? `${responseRate}%` : '—'}</p>
+                    {user && <p className="text-xs text-green-600 mt-2">{stats.interview} interviews</p>}
                   </div>
                   <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
                     <ArrowTrendingUpIcon className="h-6 w-6 text-green-600" />
@@ -577,8 +599,8 @@ const AdvancedDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Success Rate</p>
-                    <p className="text-3xl font-bold text-gray-900">{successRate}%</p>
-                    <p className="text-xs text-green-600 mt-2">{stats.hired} offers</p>
+                    <p className="text-3xl font-bold text-gray-900">{user ? `${successRate}%` : '—'}</p>
+                    {user && <p className="text-xs text-green-600 mt-2">{stats.hired} offers</p>}
                   </div>
                   <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
                     <CheckCircleIcon className="h-6 w-6 text-purple-600" />
@@ -592,7 +614,7 @@ const AdvancedDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Active Resumes</p>
-                    <p className="text-3xl font-bold text-gray-900">{resumes.length}</p>
+                    <p className="text-3xl font-bold text-gray-900">{user ? resumes.length : '—'}</p>
                     <p className="text-xs text-gray-600 mt-2">Unlimited for Premium</p>
                   </div>
                   <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -604,14 +626,16 @@ const AdvancedDashboard = () => {
           </div>
 
           {/* Insight above chart */}
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="text-sm text-gray-700">
-              📈 Your response rate is {responseRate}%. {responseRate > 30 ? 'Great job! Keep it up!' : 'Keep improving by tailoring your resume to each application.'}
-            </p>
-          </div>
+          {user && (
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="text-sm text-gray-700">
+                📈 Your response rate is {responseRate}%. {responseRate > 30 ? 'Great job! Keep it up!' : 'Keep improving by tailoring your resume to each application.'}
+              </p>
+            </div>
+          )}
 
-          {/* Weekly Progress Chart with custom tooltip */}
-          {weeklyData.length > 0 && (
+          {/* Weekly Progress Chart with custom tooltip - Only when logged in */}
+          {user && weeklyData.length > 0 && (
             <Card>
               <CardHeader>
                 <h3 className="text-lg font-semibold text-gray-900">Weekly Progress</h3>
@@ -646,8 +670,8 @@ const AdvancedDashboard = () => {
             </Card>
           )}
 
-          {/* Status Distribution */}
-          {statusData.length > 0 && (
+          {/* Status Distribution - Only when logged in */}
+          {user && statusData.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
@@ -714,7 +738,7 @@ const AdvancedDashboard = () => {
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button 
-              onClick={() => window.location.href = '/resumes'}
+              onClick={() => user ? window.location.href = '/resumes' : window.location.href = '/login'}
               className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all text-left group"
             >
               <DocumentTextIcon className="h-6 w-6 text-primary-600 mb-2 group-hover:scale-110 transition-transform" />
@@ -722,7 +746,7 @@ const AdvancedDashboard = () => {
               <p className="text-sm text-gray-600 mt-1">Build professional resumes</p>
             </button>
             <button 
-              onClick={() => window.location.href = '/jobs'}
+              onClick={() => user ? window.location.href = '/jobs' : window.location.href = '/login'}
               className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all text-left group"
             >
               <BriefcaseIcon className="h-6 w-6 text-primary-600 mb-2 group-hover:scale-110 transition-transform" />
@@ -741,13 +765,28 @@ const AdvancedDashboard = () => {
         </motion.div>
       )}
 
-      {/* Resume Analytics Tab */}
+      {/* Resume Analytics Tab - Shows login prompt if not logged in */}
       {activeTab === 'analytics' && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <ResumeAnalytics />
+          {user ? (
+            <ResumeAnalytics />
+          ) : (
+            <Card>
+              <CardBody className="text-center py-12">
+                <LockClosedIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Login Required</h3>
+                <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                  Please login to access resume analytics and track your resume performance.
+                </p>
+                <Button onClick={() => window.location.href = '/login'}>
+                  Login to Continue
+                </Button>
+              </CardBody>
+            </Card>
+          )}
         </motion.div>
       )}
 
@@ -768,26 +807,35 @@ const AdvancedDashboard = () => {
                     AI-Powered Career Insights
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Click the button below to get personalized career advice
+                    {user ? "Click the button below to get personalized career advice" : "Login to get AI-powered career insights"}
                   </p>
                 </div>
-                <Button 
-                  onClick={generateAIInsights} 
-                  isLoading={loadingInsights || isProcessing}
-                  disabled={loadingInsights || isProcessing}
-                  size="sm"
-                >
-                  <ArrowPathIcon className="h-4 w-4 mr-2" />
-                  {aiInsights ? 'Refresh Insights' : 'Generate Insights'}
-                </Button>
+                {user && (
+                  <Button 
+                    onClick={generateAIInsights} 
+                    isLoading={loadingInsights || isProcessing}
+                    disabled={loadingInsights || isProcessing}
+                    size="sm"
+                  >
+                    <ArrowPathIcon className="h-4 w-4 mr-2" />
+                    {aiInsights ? 'Refresh Insights' : 'Generate Insights'}
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardBody>
-              {loadingInsights ? (
+              {!user ? (
+                <div className="text-center py-8">
+                  <LockClosedIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">Please login to access AI-powered career insights</p>
+                  <Button onClick={() => window.location.href = '/login'} className="mt-4">
+                    Login to Continue
+                  </Button>
+                </div>
+              ) : loadingInsights ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-3"></div>
                   <p className="text-gray-600">Generating insights...</p>
-                  <p className="text-xs text-gray-400 mt-2">This may take a few seconds</p>
                 </div>
               ) : aiInsights ? (
                 <div className="space-y-6">
@@ -884,27 +932,36 @@ const AdvancedDashboard = () => {
                     AI Skill Recommendations
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Skills to learn for your career growth (Role: {detectedRole} • Level: {experienceLevel})
+                    {user ? `Skills to learn for your career growth (Role: ${detectedRole} • Level: ${experienceLevel})` : "Login to get personalized skill recommendations"}
                   </p>
                 </div>
-                <Button 
-                  onClick={generateSkillRecommendations} 
-                  isLoading={loadingSkills || isProcessing}
-                  disabled={loadingSkills || isProcessing}
-                  size="sm"
-                  variant="outline"
-                >
-                  <ArrowPathIcon className="h-4 w-4 mr-2" />
-                  {skillRecommendations ? 'Refresh Skills' : 'Get Recommendations'}
-                </Button>
+                {user && (
+                  <Button 
+                    onClick={generateSkillRecommendations} 
+                    isLoading={loadingSkills || isProcessing}
+                    disabled={loadingSkills || isProcessing}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <ArrowPathIcon className="h-4 w-4 mr-2" />
+                    {skillRecommendations ? 'Refresh Skills' : 'Get Recommendations'}
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardBody>
-              {loadingSkills ? (
+              {!user ? (
+                <div className="text-center py-8">
+                  <LockClosedIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">Please login to get AI-powered skill recommendations</p>
+                  <Button onClick={() => window.location.href = '/login'} className="mt-4">
+                    Login to Continue
+                  </Button>
+                </div>
+              ) : loadingSkills ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-3"></div>
                   <p className="text-gray-600">Analyzing skill requirements...</p>
-                  <p className="text-xs text-gray-400 mt-2">This may take a few seconds</p>
                 </div>
               ) : skillRecommendations ? (
                 <div className="space-y-6">
@@ -970,27 +1027,31 @@ const AdvancedDashboard = () => {
             </CardBody>
           </Card>
 
-          {/* Quick Stats Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
-              <p className="text-xs text-gray-600">Total Applications</p>
-            </div>
-            <div className="text-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
-              <p className="text-2xl font-bold text-green-600">{responseRate}%</p>
-              <p className="text-xs text-gray-600">Response Rate</p>
-            </div>
-            <div className="text-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
-              <p className="text-2xl font-bold text-purple-600">{stats.interview}</p>
-              <p className="text-xs text-gray-600">Interviews</p>
-            </div>
-          </div>
+          {/* Quick Stats Summary - Only show when logged in */}
+          {user && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg">
+                  <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
+                  <p className="text-xs text-gray-600">Total Applications</p>
+                </div>
+                <div className="text-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
+                  <p className="text-2xl font-bold text-green-600">{responseRate}%</p>
+                  <p className="text-xs text-gray-600">Response Rate</p>
+                </div>
+                <div className="text-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
+                  <p className="text-2xl font-bold text-purple-600">{stats.interview}</p>
+                  <p className="text-xs text-gray-600">Interviews</p>
+                </div>
+              </div>
 
-          <div className="text-center">
-            <p className="text-xs text-gray-400">
-              🤖 AI insights powered by {isRealAI ? 'OpenRouter AI' : 'Mock AI'} • {isRealAI ? 'Please wait 5 seconds between requests' : 'No rate limits for testing'}
-            </p>
-          </div>
+              <div className="text-center">
+                <p className="text-xs text-gray-400">
+                  🤖 AI insights powered by {isRealAI ? 'OpenRouter AI' : 'Mock AI'} • {isRealAI ? 'Please wait 5 seconds between requests' : 'No rate limits for testing'}
+                </p>
+              </div>
+            </>
+          )}
         </motion.div>
       )}
     </div>

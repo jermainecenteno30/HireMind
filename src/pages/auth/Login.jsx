@@ -12,35 +12,41 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    const result = await authService.signIn(email, password);
-    
-    if (result.success) {
-      toast.success('Welcome back!');
-      navigate('/dashboard');
-    } else {
-      toast.error(result.error);
-    }
-    
-    setLoading(false);
-  };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  
+  const result = await authService.signIn(email, password);
+  
+  if (result.success) {
+    toast.success('Welcome back!');
+    // Redirect to the page user was trying to access
+    const redirectPath = localStorage.getItem('redirectAfterLogin') || '/dashboard';
+    localStorage.removeItem('redirectAfterLogin');
+    navigate(redirectPath);
+  } else {
+    toast.error(result.error);
+  }
+  
+  setLoading(false);
+};
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    const result = await authService.signInWithGoogle();
-    
-    if (result.success) {
-      toast.success('Welcome to HireMind!');
-      navigate('/dashboard');
-    } else {
-      toast.error(result.error);
-    }
-    
-    setLoading(false);
-  };
+// Same for Google login
+const handleGoogleLogin = async () => {
+  setLoading(true);
+  const result = await authService.signInWithGoogle();
+  
+  if (result.success) {
+    toast.success('Welcome to HireMind!');
+    const redirectPath = localStorage.getItem('redirectAfterLogin') || '/dashboard';
+    localStorage.removeItem('redirectAfterLogin');
+    navigate(redirectPath);
+  } else {
+    toast.error(result.error);
+  }
+  
+  setLoading(false);
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">

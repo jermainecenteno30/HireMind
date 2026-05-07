@@ -16,7 +16,8 @@ import SkillGapAnalyzer from '../pages/skills/SkillGapAnalyzer';
 import PortfolioBuilder from '../pages/portfolio/PortfolioBuilder';
 import PublicPortfolio from '../pages/portfolio/PublicPortfolio';
 
-const PrivateRoute = ({ children }) => {
+// Protected Route - Shows login modal or redirects
+const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
@@ -30,7 +31,31 @@ const PrivateRoute = ({ children }) => {
     );
   }
   
-  return user ? children : <Navigate to="/login" />;
+  if (!user) {
+    // Store the intended path to redirect after login
+    localStorage.setItem('redirectAfterLogin', window.location.pathname);
+    return <Navigate to="/login" state={{ from: window.location.pathname }} />;
+  }
+  
+  return children;
+};
+
+// Public Route - Dashboard visible to everyone
+const PublicRoute = ({ children }) => {
+  const { loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return children;
 };
 
 const AppRoutes = () => {
@@ -39,69 +64,73 @@ const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
+        {/* Public Routes - Dashboard visible to everyone */}
+        <Route path="/" element={
+          <PublicRoute>
+            <Layout>
+              <AdvancedDashboard />
+            </Layout>
+          </PublicRoute>
+        } />
+        
+        <Route path="/dashboard" element={
+          <PublicRoute>
+            <Layout>
+              <AdvancedDashboard />
+            </Layout>
+          </PublicRoute>
+        } />
+        
+        {/* Public Portfolio Route */}
         <Route path="/portfolio/:username" element={<PublicPortfolio />} />
         
         {/* Auth Routes */}
         <Route path="/login" element={
-          user ? <Navigate to="/dashboard" /> : <Login />
+          user ? <Navigate to="/" /> : <Login />
         } />
         <Route path="/signup" element={
-          user ? <Navigate to="/dashboard" /> : <Signup />
+          user ? <Navigate to="/" /> : <Signup />
         } />
         
-        {/* Root Redirect */}
-        <Route path="/" element={
-          <Navigate to={user ? "/dashboard" : "/login"} />
-        } />
-        
-        {/* Protected Routes (require authentication) */}
-        <Route path="/dashboard" element={
-          <PrivateRoute>
-            <Layout>
-              <AdvancedDashboard />
-            </Layout>
-          </PrivateRoute>
-        } />
-        
+        {/* Protected Routes (require login) */}
         <Route path="/resumes" element={
-          <PrivateRoute>
+          <ProtectedRoute>
             <Layout>
               <ResumeList />
             </Layout>
-          </PrivateRoute>
+          </ProtectedRoute>
         } />
         
         <Route path="/jobs" element={
-          <PrivateRoute>
+          <ProtectedRoute>
             <Layout>
               <JobTracker />
             </Layout>
-          </PrivateRoute>
+          </ProtectedRoute>
         } />
         
         <Route path="/skills" element={
-          <PrivateRoute>
+          <ProtectedRoute>
             <Layout>
               <SkillGapAnalyzer />
             </Layout>
-          </PrivateRoute>
+          </ProtectedRoute>
         } />
         
         <Route path="/portfolio" element={
-          <PrivateRoute>
+          <ProtectedRoute>
             <Layout>
               <PortfolioBuilder />
             </Layout>
-          </PrivateRoute>
+          </ProtectedRoute>
         } />
         
         <Route path="/settings" element={
-          <PrivateRoute>
+          <ProtectedRoute>
             <Layout>
               <Settings />
             </Layout>
-          </PrivateRoute>
+          </ProtectedRoute>
         } />
       </Routes>
     </BrowserRouter>

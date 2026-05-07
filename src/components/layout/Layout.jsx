@@ -1,9 +1,12 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Layout = ({ children }) => {
+  const location = useLocation();
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar />
