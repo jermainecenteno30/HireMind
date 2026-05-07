@@ -45,15 +45,16 @@ export const useResumes = () => {
     }
 
     try {
-      // Store structured JSON instead of markdown
+      // Store both structured data AND content for templates
       const newResume = {
         title: resumeData.title,
         tags: resumeData.tags || [],
-        data: resumeData.structuredData, // Store structured JSON
+        content: resumeData.content || '', // IMPORTANT: Store the markdown content for templates
+        structuredData: resumeData.structuredData || null,
         userId: user.uid,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        version: 1,
+        version: resumeData.version || 1,
         atsScore: resumeData.atsScore || 0
       };
       const docRef = await addDoc(collection(db, 'resumes'), newResume);
@@ -71,7 +72,7 @@ export const useResumes = () => {
       const updatedData = {
         ...resumeData,
         updatedAt: new Date().toISOString(),
-        version: resumes.find(r => r.id === resumeId)?.version + 1 || 1
+        version: (resumes.find(r => r.id === resumeId)?.version || 0) + 1
       };
       await updateDoc(resumeRef, updatedData);
       setResumes(resumes.map(resume => 

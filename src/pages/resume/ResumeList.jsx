@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import Card, { CardBody, CardHeader } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
-import Input from '../../components/ui/Input';  // ← ADD THIS LINE
+import Input from '../../components/ui/Input';
 import ResumeBuilder from '../../components/resume/ResumeBuilderV2';
 import { ModernTemplate, MinimalTemplate, CorporateTemplate, TemplateSelector } from '../../components/resume/ResumeTemplates';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -109,7 +109,7 @@ const ResumeList = () => {
     setFormData({
       title: resume.title,
       tags: resume.tags || [],
-      content: resume.content,
+      content: resume.content || '',
       structuredData: resume.structuredData || null,
       version: resume.version
     });
@@ -132,13 +132,13 @@ const ResumeList = () => {
 
   const handleCopyToClipboard = () => {
     if (viewingResume) {
-      navigator.clipboard.writeText(viewingResume.content);
+      navigator.clipboard.writeText(viewingResume.content || '');
       toast.success('Resume content copied to clipboard!');
     }
   };
 
   const handleDownload = () => {
-    if (viewingResume) {
+    if (viewingResume && viewingResume.content) {
       const element = document.createElement('a');
       const file = new Blob([viewingResume.content], { type: 'text/plain' });
       element.href = URL.createObjectURL(file);
@@ -147,6 +147,8 @@ const ResumeList = () => {
       element.click();
       document.body.removeChild(element);
       toast.success('Resume downloaded!');
+    } else {
+      toast.error('No content to download');
     }
   };
 
@@ -329,12 +331,32 @@ const ResumeList = () => {
                 )}
               </div>
               
-              {/* Modal Content - Rendered Template */}
+              {/* Modal Content - Rendered Template with null check */}
               <div className="p-6">
-                {renderResumeTemplate()}
+                {viewingResume && viewingResume.content ? (
+                  renderResumeTemplate()
+                ) : (
+                  <div className="text-center py-12 bg-gray-50 rounded-lg">
+                    <DocumentTextIcon className="h-16 w-16 text-gray-300 mx-auto mb-3" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Resume Content</h3>
+                    <p className="text-gray-500 mb-4">
+                      This resume doesn't have any content yet.
+                    </p>
+                    <Button 
+                      size="sm" 
+                      onClick={() => {
+                        setViewingResume(null);
+                        handleEdit(viewingResume);
+                      }}
+                    >
+                      <PencilIcon className="h-4 w-4 mr-2" />
+                      Edit Resume
+                    </Button>
+                  </div>
+                )}
                 
                 {/* AI Resume Feedback Section (Premium) */}
-                {isPremium && (
+                {isPremium && viewingResume && viewingResume.content && (
                   <div className="mt-6">
                     <AIResumeFeedback 
                       resumeContent={viewingResume.content}
