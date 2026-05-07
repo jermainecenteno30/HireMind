@@ -1,5 +1,5 @@
 import React from 'react';
-import { LinkIcon, EnvelopeIcon, DocumentTextIcon } from 'lucide-react';
+import { LinkIcon, EnvelopeIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 
 const ThemeMinimalist = ({ portfolio, onDownloadResume, onContact }) => {
   return (
@@ -59,7 +59,7 @@ const ThemeMinimalist = ({ portfolio, onDownloadResume, onContact }) => {
                   )}
                   {project.link && (
                     <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-primary-600 text-sm mt-2 inline-block">
-                      View → <LinkIcon className="w-3 h-3 inline" />
+                      View Project → <LinkIcon className="w-3 h-3 inline" />
                     </a>
                   )}
                 </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LinkIcon, EnvelopeIcon, DocumentTextIcon } from 'lucide-react';
+import { LinkIcon, EnvelopeIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 
 const ThemeDark = ({ portfolio, onDownloadResume, onContact }) => {
   return (
