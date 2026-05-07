@@ -36,30 +36,8 @@ import {
   RocketLaunchIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-} from 'chart.js';
-import { Bar, Pie } from 'react-chartjs-2';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
 
 // DnD imports
 import {
@@ -313,10 +291,12 @@ const JobTracker = () => {
       });
       const topRole = Object.entries(roleCount).sort((a, b) => b[1] - a[1])[0];
       
+      // Weekly applications data (simple for display)
       const weeks = {};
       jobs.forEach(job => {
-        const week = new Date(job.dateApplied).toLocaleDateString('en-US', { week: 'numeric' });
-        weeks[week] = (weeks[week] || 0) + 1;
+        const date = new Date(job.dateApplied);
+        const weekKey = `${date.getFullYear()}-${Math.ceil(date.getDate() / 7)}`;
+        weeks[weekKey] = (weeks[weekKey] || 0) + 1;
       });
       
       setAnalytics({
@@ -324,39 +304,11 @@ const JobTracker = () => {
         interviewRate: jobs.length > 0 ? ((interviewJobs.length / jobs.length) * 100).toFixed(1) : 0,
         avgResponseTime: avgResponseTime,
         topRole: topRole ? { role: topRole[0], count: topRole[1] } : null,
-        weeklyData: Object.values(weeks),
+        weeklyData: Object.values(weeks).slice(-4),
         conversionRate: jobs.length > 0 ? ((hiredJobs.length / jobs.length) * 100).toFixed(1) : 0
       });
     }
   }, [jobs]);
-  
-  const weeklyChartData = {
-    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-    datasets: [
-      {
-        label: 'Applications',
-        data: analytics?.weeklyData?.slice(-4) || [0, 0, 0, 0],
-        backgroundColor: 'rgba(14, 165, 233, 0.5)',
-        borderColor: 'rgb(14, 165, 233)',
-        borderWidth: 2,
-      },
-    ],
-  };
-  
-  const statusChartData = {
-    labels: ['Applied', 'Interview', 'Rejected', 'Hired'],
-    datasets: [
-      {
-        data: [
-          jobs.filter(j => j.status === 'applied').length,
-          jobs.filter(j => j.status === 'interview').length,
-          jobs.filter(j => j.status === 'rejected').length,
-          jobs.filter(j => j.status === 'hired').length,
-        ],
-        backgroundColor: ['#0ea5e9', '#f59e0b', '#ef4444', '#10b981'],
-      },
-    ],
-  };
   
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -528,9 +480,12 @@ const JobTracker = () => {
   // Calculate best performing resume
   const bestResumeVersion = () => {
     if (resumes.length === 0) return null;
-    // In production, track which resume was used for each application
     return resumes[0];
   };
+  
+  // Simple weekly progress display
+  const weeklyProgressData = analytics?.weeklyData || [0, 0, 0, 0];
+  const maxWeekly = Math.max(...weeklyProgressData, 1);
   
   return (
     <div className="space-y-6">
@@ -595,6 +550,58 @@ const JobTracker = () => {
             </div>
           </div>
 
+          {/* Weekly Applications Bar Chart (Simple HTML/CSS version) */}
+          <Card>
+            <CardHeader>
+              <h3 className="text-lg font-semibold text-gray-900">Weekly Applications</h3>
+              <p className="text-sm text-gray-600 mt-1">Your application activity over the last 4 weeks</p>
+            </CardHeader>
+            <CardBody>
+              <div className="space-y-3">
+                {weeklyProgressData.map((count, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <span className="text-sm text-gray-600 w-16">Week {index + 1}</span>
+                    <div className="flex-1 h-8 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary-500 rounded-full flex items-center justify-end pr-3 text-white text-xs font-medium"
+                        style={{ width: `${(count / maxWeekly) * 100}%` }}
+                      >
+                        {count > 0 && count}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* Application Status Pie Chart (Simple version) */}
+          <Card>
+            <CardHeader>
+              <h3 className="text-lg font-semibold text-gray-900">Application Status</h3>
+            </CardHeader>
+            <CardBody>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <p className="text-2xl font-bold text-blue-600">{jobs.filter(j => j.status === 'applied').length}</p>
+                  <p className="text-xs text-gray-600">Applied</p>
+                </div>
+                <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                  <p className="text-2xl font-bold text-yellow-600">{jobs.filter(j => j.status === 'interview').length}</p>
+                  <p className="text-xs text-gray-600">Interview</p>
+                </div>
+                <div className="text-center p-3 bg-red-50 rounded-lg">
+                  <p className="text-2xl font-bold text-red-600">{jobs.filter(j => j.status === 'rejected').length}</p>
+                  <p className="text-xs text-gray-600">Rejected</p>
+                </div>
+                <div className="text-center p-3 bg-green-50 rounded-lg">
+                  <p className="text-2xl font-bold text-green-600">{jobs.filter(j => j.status === 'hired').length}</p>
+                  <p className="text-xs text-gray-600">Hired</p>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
           {/* Advanced Analytics Card */}
           <Card>
             <CardHeader>
@@ -655,28 +662,6 @@ const JobTracker = () => {
             </CardBody>
           </Card>
         </>
-      )}
-      
-      {/* Charts Section */}
-      {jobs.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold text-gray-900">Weekly Applications</h3>
-            </CardHeader>
-            <CardBody>
-              <Bar data={weeklyChartData} options={{ responsive: true, maintainAspectRatio: true }} />
-            </CardBody>
-          </Card>
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold text-gray-900">Application Status</h3>
-            </CardHeader>
-            <CardBody>
-              <Pie data={statusChartData} options={{ responsive: true, maintainAspectRatio: true }} />
-            </CardBody>
-          </Card>
-        </div>
       )}
       
       {/* Filters */}
@@ -812,7 +797,6 @@ const JobTracker = () => {
           resumeId={resumes[0]?.id}
           onUpdate={(improvedContent) => {
             toast.success('Resume improvement applied!');
-            // In production, update the resume in Firestore
           }}
         />
       )}
