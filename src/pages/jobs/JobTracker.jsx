@@ -58,8 +58,8 @@ import { CSS } from '@dnd-kit/utilities';
 
 // Company Logo Component
 // Update the CompanyLogo component to handle errors better
+// Company Logo Component - Clean, no external APIs, no errors
 const CompanyLogo = ({ companyName, size = 'md' }) => {
-  const [imageError, setImageError] = useState(false);
   const initials = companyName?.charAt(0).toUpperCase() || '?';
   const sizeClasses = {
     sm: 'w-8 h-8 text-sm',
@@ -67,23 +67,16 @@ const CompanyLogo = ({ companyName, size = 'md' }) => {
     lg: 'w-12 h-12 text-lg'
   };
   
-  // Clean company name for URL
-  const cleanCompanyName = companyName?.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9.-]/g, '');
-  const logoUrl = `https://logo.clearbit.com/${cleanCompanyName}.com`;
-  
-  if (!imageError && companyName && cleanCompanyName) {
-    return (
-      <img
-        src={logoUrl}
-        alt={companyName}
-        className={`${sizeClasses[size]} rounded-lg object-cover bg-gray-100`}
-        onError={() => setImageError(true)}
-      />
-    );
-  }
+  // Generate consistent color based on company name length
+  const colors = [
+    'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500',
+    'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500',
+    'bg-orange-500', 'bg-cyan-500', 'bg-emerald-500', 'bg-violet-500'
+  ];
+  const colorIndex = (companyName?.length || 0) % colors.length;
   
   return (
-    <div className={`${sizeClasses[size]} bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center text-white font-bold`}>
+    <div className={`${sizeClasses[size]} ${colors[colorIndex]} rounded-lg flex items-center justify-center text-white font-bold shadow-sm`}>
       {initials}
     </div>
   );
