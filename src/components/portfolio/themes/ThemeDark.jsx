@@ -1,5 +1,5 @@
 import React from 'react';
-import { LinkIcon, EnvelopeIcon, DocumentTextIcon, GithubIcon, LinkedinIcon, TwitterIcon } from 'lucide-react';
+import { LinkIcon, EnvelopeIcon, DocumentTextIcon } from 'lucide-react';
 
 const ThemeDark = ({ portfolio, onDownloadResume, onContact }) => {
   return (
@@ -21,9 +21,36 @@ const ThemeDark = ({ portfolio, onDownloadResume, onContact }) => {
           {portfolio.title && <p className="text-gray-400 mt-2">{portfolio.title}</p>}
           
           <div className="flex justify-center gap-4 mt-4">
-            {portfolio.github && <a href={portfolio.github} target="_blank" className="text-gray-400 hover:text-white transition">GitHub</a>}
-            {portfolio.linkedin && <a href={portfolio.linkedin} target="_blank" className="text-gray-400 hover:text-white transition">LinkedIn</a>}
-            {portfolio.twitter && <a href={portfolio.twitter} target="_blank" className="text-gray-400 hover:text-white transition">Twitter</a>}
+            {portfolio.github && (
+              <a 
+                href={portfolio.github} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-gray-400 hover:text-white transition"
+              >
+                GitHub
+              </a>
+            )}
+            {portfolio.linkedin && (
+              <a 
+                href={portfolio.linkedin} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-gray-400 hover:text-white transition"
+              >
+                LinkedIn
+              </a>
+            )}
+            {portfolio.twitter && (
+              <a 
+                href={portfolio.twitter} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-gray-400 hover:text-white transition"
+              >
+                Twitter
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -42,6 +69,9 @@ const ThemeDark = ({ portfolio, onDownloadResume, onContact }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {portfolio.projects.map((project, i) => (
                 <div key={i} className="bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition">
+                  {project.image && (
+                    <img src={project.image} alt={project.title} className="w-full h-32 object-cover rounded-lg mb-2" />
+                  )}
                   <h3 className="font-medium">{project.title}</h3>
                   <p className="text-gray-400 text-sm mt-1">{project.description}</p>
                   {project.technologies && (
@@ -58,11 +88,17 @@ const ThemeDark = ({ portfolio, onDownloadResume, onContact }) => {
         )}
 
         <div className="flex gap-3">
-          <button onClick={onDownloadResume} className="flex-1 bg-white text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition font-medium">
+          <button 
+            onClick={onDownloadResume} 
+            className="flex-1 bg-white text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition font-medium"
+          >
             <DocumentTextIcon className="h-4 w-4 inline mr-2" />
             Resume
           </button>
-          <button onClick={onContact} className="flex-1 border border-gray-700 text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-800 transition">
+          <button 
+            onClick={onContact} 
+            className="flex-1 border border-gray-700 text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+          >
             <EnvelopeIcon className="h-4 w-4 inline mr-2" />
             Contact
           </button>

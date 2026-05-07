@@ -1,5 +1,5 @@
 import React from 'react';
-import { LinkIcon, EnvelopeIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { LinkIcon, EnvelopeIcon, DocumentTextIcon } from 'lucide-react';
 
 const ThemeMinimalist = ({ portfolio, onDownloadResume, onContact }) => {
   return (
@@ -12,9 +12,21 @@ const ThemeMinimalist = ({ portfolio, onDownloadResume, onContact }) => {
         {portfolio.title && <p className="text-gray-500 mt-2 text-lg">{portfolio.title}</p>}
         
         <div className="flex justify-center gap-4 mt-4">
-          {portfolio.github && <a href={portfolio.github} target="_blank" className="text-gray-400 hover:text-gray-600 text-sm">GitHub</a>}
-          {portfolio.linkedin && <a href={portfolio.linkedin} target="_blank" className="text-gray-400 hover:text-gray-600 text-sm">LinkedIn</a>}
-          {portfolio.twitter && <a href={portfolio.twitter} target="_blank" className="text-gray-400 hover:text-gray-600 text-sm">Twitter</a>}
+          {portfolio.github && (
+            <a href={portfolio.github} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600 text-sm">
+              GitHub
+            </a>
+          )}
+          {portfolio.linkedin && (
+            <a href={portfolio.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600 text-sm">
+              LinkedIn
+            </a>
+          )}
+          {portfolio.twitter && (
+            <a href={portfolio.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600 text-sm">
+              Twitter
+            </a>
+          )}
         </div>
       </div>
 
@@ -33,6 +45,9 @@ const ThemeMinimalist = ({ portfolio, onDownloadResume, onContact }) => {
             <div className="space-y-6">
               {portfolio.projects.map((project, i) => (
                 <div key={i} className="border-l-2 border-gray-200 pl-4">
+                  {project.image && (
+                    <img src={project.image} alt={project.title} className="w-full h-32 object-cover rounded-lg mb-2" />
+                  )}
                   <h3 className="font-medium text-gray-900">{project.title}</h3>
                   <p className="text-gray-500 text-sm mt-1">{project.description}</p>
                   {project.technologies && (
@@ -43,7 +58,7 @@ const ThemeMinimalist = ({ portfolio, onDownloadResume, onContact }) => {
                     </div>
                   )}
                   {project.link && (
-                    <a href={project.link} target="_blank" className="text-primary-600 text-sm mt-2 inline-block">
+                    <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-primary-600 text-sm mt-2 inline-block">
                       View → <LinkIcon className="w-3 h-3 inline" />
                     </a>
                   )}
@@ -54,11 +69,17 @@ const ThemeMinimalist = ({ portfolio, onDownloadResume, onContact }) => {
         )}
 
         <div className="flex gap-3 pt-4">
-          <button onClick={onDownloadResume} className="flex-1 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition text-sm">
+          <button 
+            onClick={onDownloadResume} 
+            className="flex-1 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition text-sm"
+          >
             <DocumentTextIcon className="h-4 w-4 inline mr-2" />
             Resume
           </button>
-          <button onClick={onContact} className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition text-sm">
+          <button 
+            onClick={onContact} 
+            className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition text-sm"
+          >
             <EnvelopeIcon className="h-4 w-4 inline mr-2" />
             Contact
           </button>

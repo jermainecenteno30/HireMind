@@ -1,5 +1,5 @@
 import React from 'react';
-import { BriefcaseIcon, LinkIcon, EnvelopeIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { LinkIcon, EnvelopeIcon, DocumentTextIcon } from 'lucide-react';
 
 const ThemeModern = ({ portfolio, onDownloadResume, onContact }) => {
   return (
@@ -22,13 +22,19 @@ const ThemeModern = ({ portfolio, onDownloadResume, onContact }) => {
           {/* Social Links */}
           <div className="flex gap-4 mt-4">
             {portfolio.github && (
-              <a href={portfolio.github} target="_blank" className="text-white hover:text-primary-200 transition">GitHub</a>
+              <a href={portfolio.github} target="_blank" rel="noopener noreferrer" className="text-white hover:text-primary-200 transition">
+                GitHub
+              </a>
             )}
             {portfolio.linkedin && (
-              <a href={portfolio.linkedin} target="_blank" className="text-white hover:text-primary-200 transition">LinkedIn</a>
+              <a href={portfolio.linkedin} target="_blank" rel="noopener noreferrer" className="text-white hover:text-primary-200 transition">
+                LinkedIn
+              </a>
             )}
             {portfolio.twitter && (
-              <a href={portfolio.twitter} target="_blank" className="text-white hover:text-primary-200 transition">Twitter</a>
+              <a href={portfolio.twitter} target="_blank" rel="noopener noreferrer" className="text-white hover:text-primary-200 transition">
+                Twitter
+              </a>
             )}
           </div>
         </div>
@@ -63,7 +69,7 @@ const ThemeModern = ({ portfolio, onDownloadResume, onContact }) => {
                     </div>
                   )}
                   {project.link && (
-                    <a href={project.link} target="_blank" className="text-primary-600 text-sm mt-3 inline-flex items-center gap-1">
+                    <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-primary-600 text-sm mt-3 inline-flex items-center gap-1">
                       View Project <LinkIcon className="w-3 h-3" />
                     </a>
                   )}
@@ -75,11 +81,17 @@ const ThemeModern = ({ portfolio, onDownloadResume, onContact }) => {
 
         {/* Contact & Actions */}
         <div className="flex gap-3 pt-6 border-t border-gray-200">
-          <button onClick={onDownloadResume} className="flex-1 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition">
+          <button 
+            onClick={onDownloadResume} 
+            className="flex-1 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition"
+          >
             <DocumentTextIcon className="h-4 w-4 inline mr-2" />
             Download Resume
           </button>
-          <button onClick={onContact} className="flex-1 border border-primary-600 text-primary-600 px-4 py-2 rounded-lg hover:bg-primary-50 transition">
+          <button 
+            onClick={onContact} 
+            className="flex-1 border border-primary-600 text-primary-600 px-4 py-2 rounded-lg hover:bg-primary-50 transition"
+          >
             <EnvelopeIcon className="h-4 w-4 inline mr-2" />
             Contact Me
           </button>
