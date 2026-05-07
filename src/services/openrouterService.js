@@ -764,6 +764,7 @@ Results-driven professional with proven track record of success. Skilled in deli
     } catch (error) {
       console.error('OpenRouter Rewrite Error:', error);
       const fallback = getFallbackData('rewriteSection', { section });
+      
       return fallback.result;
     }
   },
