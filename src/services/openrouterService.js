@@ -346,7 +346,91 @@ Return ONLY JSON:
       return getFallbackData('match');
     }
   },
+// Analyze resume and provide feedback (for AI Resume Feedback feature)
+async analyzeResume(resumeContent, resumeTitle, userSkills = []) {
+  console.log('📝 OpenRouter: Analyzing resume:', resumeTitle);
+  
+  if (!OPENROUTER_API_KEY) {
+    console.log('📝 OpenRouter unavailable, using fallback for resume analysis');
+    return {
+      strengths: ["Your resume has good content", "Relevant experience highlighted"],
+      improvements: ["Add more quantifiable achievements", "Include specific metrics"],
+      suggestions: ["Add numbers like 'Improved performance by 30%'", "Use stronger action verbs"],
+      atsScore: 68,
+      keywords: ["JavaScript", "React", "Node.js", "Python", "SQL", "Git"]
+    };
+  }
 
+  try {
+    const prompt = `You are an expert resume reviewer. Analyze this resume and provide specific, actionable feedback.
+
+Resume Title: ${resumeTitle}
+Resume Content: ${resumeContent?.substring(0, 3000) || 'No content'}
+User's Skills: ${userSkills.join(', ') || 'Not specified'}
+
+Return ONLY valid JSON (no extra text) in this exact format:
+{
+  "strengths": ["strength 1", "strength 2", "strength 3"],
+  "improvements": ["improvement 1", "improvement 2", "improvement 3"],
+  "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"],
+  "atsScore": 75,
+  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]
+}
+
+Focus on:
+- Quantifiable achievements (look for numbers, percentages)
+- Action verbs (led, managed, created, developed)
+- ATS-friendly keywords
+- Formatting and structure
+- Missing contact information`;
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": SITE_URL,
+        "X-Title": SITE_NAME
+      },
+      body: JSON.stringify({
+        model: "openrouter/free",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.3,
+        max_tokens: 800
+      })
+    });
+
+    if (!response.ok) {
+      console.error('OpenRouter API error:', response.status);
+      return {
+        strengths: ["Your resume has good content", "Relevant experience highlighted"],
+        improvements: ["Add more quantifiable achievements", "Include specific metrics"],
+        suggestions: ["Add numbers like 'Improved performance by 30%'", "Use stronger action verbs"],
+        atsScore: 68,
+        keywords: ["JavaScript", "React", "Node.js", "Python", "SQL", "Git"]
+      };
+    }
+    
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content;
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    return JSON.parse(content);
+    
+  } catch (error) {
+    console.error('OpenRouter Analyze Error:', error);
+    return {
+      strengths: ["Your resume has good content", "Relevant experience highlighted"],
+      improvements: ["Add more quantifiable achievements", "Include specific metrics"],
+      suggestions: ["Add numbers like 'Improved performance by 30%'", "Use stronger action verbs"],
+      atsScore: 68,
+      keywords: ["JavaScript", "React", "Node.js", "Python", "SQL", "Git"]
+    };
+  }
+},
   // Resume Optimizer - Rewrite and improve resume content
   async optimizeResume(resumeContent, improvementType = 'ats') {
     try {
