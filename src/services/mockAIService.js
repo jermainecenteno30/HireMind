@@ -208,7 +208,73 @@ export const mockAIService = {
       salaryRange
     };
   },
-
+// Analyze resume and provide feedback (for AI Resume Feedback feature)
+async analyzeResume(resumeContent, resumeTitle, userSkills = []) {
+  console.log('📝 Mock AI: Analyzing resume:', resumeTitle);
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  // Check for metrics
+  const hasMetrics = resumeContent && (resumeContent.includes('%') || resumeContent.includes('increased') || resumeContent.includes('improved') || /\d+%/.test(resumeContent));
+  const hasActionVerbs = resumeContent && /(led|managed|created|developed|implemented|designed|built|launched)/i.test(resumeContent);
+  const hasContactInfo = resumeContent && (/@|\+63|0\d{10}|email/i.test(resumeContent));
+  const wordCount = resumeContent?.split(/\s+/).length || 0;
+  
+  const strengths = [
+    "✅ Clear professional summary",
+    "✅ Good use of technical keywords",
+    "✅ Relevant experience highlighted"
+  ];
+  
+  const improvements = [];
+  const suggestions = [];
+  
+  if (!hasMetrics) {
+    improvements.push("❌ Add more quantifiable achievements (numbers, percentages)");
+    suggestions.push("💡 Add metrics like 'Improved performance by 30%' or 'Increased sales by 25%'");
+  } else {
+    strengths.push("✅ Excellent use of quantifiable achievements with metrics!");
+  }
+  
+  if (!hasActionVerbs) {
+    suggestions.push("💡 Use stronger action verbs: led, created, implemented, developed, launched");
+  } else {
+    strengths.push("✅ Strong action verbs used throughout your resume");
+  }
+  
+  if (!hasContactInfo) {
+    improvements.push("❌ Missing contact information");
+    suggestions.push("💡 Add your phone number and email at the top of the resume");
+  }
+  
+  // Check resume length
+  if (wordCount < 200) {
+    improvements.push("❌ Resume is too brief");
+    suggestions.push("💡 Add more details about your experience, projects, and achievements");
+  } else if (wordCount > 800) {
+    suggestions.push("💡 Consider condensing your resume - aim for 1-2 pages maximum");
+  }
+  
+  // Calculate ATS score
+  let atsScore = 65;
+  if (hasMetrics) atsScore += 15;
+  if (hasActionVerbs) atsScore += 10;
+  if (hasContactInfo) atsScore += 5;
+  if (wordCount >= 300 && wordCount <= 700) atsScore += 5;
+  if (resumeContent && resumeContent.length > 1000) atsScore += 5;
+  atsScore = Math.min(98, atsScore);
+  
+  // Keywords
+  const keywords = ["JavaScript", "React", "Node.js", "Python", "SQL", "Git", "HTML", "CSS", "TypeScript", "AWS"];
+  
+  return {
+    strengths: strengths.slice(0, 4),
+    improvements: improvements.slice(0, 3),
+    suggestions: suggestions.slice(0, 4),
+    atsScore: atsScore,
+    keywords: keywords.slice(0, 6),
+    wordCount: wordCount
+  };
+},
   // Resume Optimizer - Rewrite and improve resume content
   async optimizeResume(resumeContent, improvementType = 'ats') {
     console.log('📝 Mock AI (Free Tier): Optimizing resume with', improvementType);
