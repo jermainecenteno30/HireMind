@@ -9,7 +9,6 @@ import {
   LightBulbIcon, 
   CheckCircleIcon, 
   XCircleIcon,
-  ChartBarIcon,
   TagIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
@@ -33,16 +32,28 @@ const AIResumeFeedback = ({ resumeContent, resumeTitle, userSkills = [] }) => {
       return;
     }
 
-    setLoading(true);
-    const result = await analyzeResume(resumeContent, resumeTitle, userSkills);
-    
-    if (result && !result.error) {
-      setFeedback(result);
-      toast.success('AI analysis complete!');
-    } else {
-      toast.error('Failed to analyze resume. Please try again.');
+    if (!analyzeResume || typeof analyzeResume !== 'function') {
+      toast.error('AI service not available. Please try again later.');
+      console.error('analyzeResume is not a function:', analyzeResume);
+      return;
     }
-    setLoading(false);
+
+    setLoading(true);
+    try {
+      const result = await analyzeResume(resumeContent, resumeTitle, userSkills);
+      
+      if (result && !result.error) {
+        setFeedback(result);
+        toast.success('AI analysis complete!');
+      } else {
+        toast.error('Failed to analyze resume. Please try again.');
+      }
+    } catch (error) {
+      console.error('AI Analysis Error:', error);
+      toast.error('Error analyzing resume. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // If no access, show login/upgrade prompt (but we're forcing free access)
@@ -78,7 +89,7 @@ const AIResumeFeedback = ({ resumeContent, resumeTitle, userSkills = [] }) => {
               AI Resume Feedback {FORCE_FREE_ACCESS && <Badge variant="success" className="ml-2 text-xs">Free Access</Badge>}
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Powered by Google Gemini AI • Analyzing "{resumeTitle || 'Your Resume'}"
+              Powered by AI • Analyzing "{resumeTitle || 'Your Resume'}"
             </p>
           </div>
           <Button 
@@ -193,7 +204,7 @@ const AIResumeFeedback = ({ resumeContent, resumeTitle, userSkills = [] }) => {
             Click "Analyze with AI" to get intelligent feedback on your resume
           </p>
           <p className="text-xs text-gray-400 mt-2">
-            Powered by Google Gemini AI • Free for all users
+            Powered by AI • Free for all users
           </p>
         </CardBody>
       )}

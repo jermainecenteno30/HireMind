@@ -79,6 +79,51 @@ export const AIProvider = ({ children }) => {
     );
   };
 
+  // NEW: Analyze resume and provide feedback
+  const analyzeResume = (resumeContent, resumeTitle, userSkills) => {
+    const { service } = getAIService();
+    return withAICheck(
+      () => service.analyzeResume(resumeContent, resumeTitle, userSkills),
+      'Failed to analyze resume'
+    );
+  };
+
+  // NEW: Optimize resume content
+  const optimizeResume = (resumeContent, improvementType) => {
+    const { service } = getAIService();
+    return withAICheck(
+      () => service.optimizeResume(resumeContent, improvementType),
+      'Failed to optimize resume'
+    );
+  };
+
+  // NEW: Generate ATS bullet point
+  const generateAtsBullet = (resumeContent, type) => {
+    const { service } = getAIService();
+    return withAICheck(
+      () => service.generateAtsBullet(resumeContent, type),
+      'Failed to generate ATS bullet'
+    );
+  };
+
+  // NEW: Rewrite resume section
+  const rewriteSection = (resumeContent, section) => {
+    const { service } = getAIService();
+    return withAICheck(
+      () => service.rewriteSection(resumeContent, section),
+      'Failed to rewrite section'
+    );
+  };
+
+  // NEW: Parse job description
+  const parseJobDescription = (content, inputType) => {
+    const { service } = getAIService();
+    return withAICheck(
+      () => service.parseJobDescription(content, inputType),
+      'Failed to parse job description'
+    );
+  };
+
   // Generate AI-powered follow-up suggestion for job applications
   const getFollowUpSuggestion = async (job) => {
     const { service } = getAIService();
@@ -133,6 +178,11 @@ export const AIProvider = ({ children }) => {
       getSkillRecommendations,
       matchResumeToJob,
       getFollowUpSuggestion,
+      analyzeResume,
+      optimizeResume,
+      generateAtsBullet,
+      rewriteSection,
+      parseJobDescription,
       isProcessing,
       isPremium,
       isGeminiAvailable: geminiService.isRealAIAvailable(),
