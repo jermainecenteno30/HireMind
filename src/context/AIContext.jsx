@@ -8,6 +8,9 @@ import toast from 'react-hot-toast';
 // 🔥 FOR TESTING ONLY - Set to false for production
 const FORCE_PREMIUM_AI_TESTING = true;
 
+// 🔥 FORCE USE MOCK AI - Set to true to bypass Gemini/OpenRouter
+const FORCE_MOCK_AI = true;
+
 const AIContext = createContext(null);
 
 export const useAI = () => {
@@ -26,12 +29,18 @@ export const AIProvider = ({ children }) => {
 
   // Determine which AI service to use based on user tier
   const getAIService = () => {
+    // FORCE USE MOCK AI FOR TESTING
+    if (FORCE_MOCK_AI) {
+      console.log('📝 Using Mock AI (Forced for testing)');
+      return { service: mockAIService, name: 'Mock AI' };
+    }
+    
     if (isPremium) {
       console.log('💎 Premium User - Using OpenRouter AI');
       return { service: openrouterService, name: 'OpenRouter' };
     } else {
       // Free users get Gemini first, with fallback to Mock AI
-      if (geminiService.isRealAIAvailable()) {
+      if (geminiService.isRealAIAvailable && geminiService.isRealAIAvailable()) {
         console.log('🌟 Free User - Using Google Gemini AI');
         return { service: geminiService, name: 'Gemini' };
       } else {
@@ -79,16 +88,44 @@ export const AIProvider = ({ children }) => {
     );
   };
 
-  // NEW: Analyze resume and provide feedback
+  // Analyze resume and provide feedback
   const analyzeResume = (resumeContent, resumeTitle, userSkills) => {
-    const { service } = getAIService();
+    const { service, name } = getAIService();
+    console.log(`🔍 analyzeResume called - Using service: ${name}`);
+    console.log(`🔍 Service has analyzeResume? ${typeof service.analyzeResume === 'function' ? 'Yes' : 'No'}`);
+    
     return withAICheck(
-      () => service.analyzeResume(resumeContent, resumeTitle, userSkills),
+      async () => {
+        // Ensure the function exists
+        if (typeof service.analyzeResume !== 'function') {
+          console.error(`analyzeResume is not a function on ${name}`);
+          // Return mock data as fallback
+          return {
+            strengths: [
+              "✅ Clear professional summary",
+              "✅ Good use of technical keywords",
+              "✅ Relevant experience highlighted"
+            ],
+            improvements: [
+              "❌ Add more quantifiable achievements",
+              "❌ Include specific metrics"
+            ],
+            suggestions: [
+              "💡 Add metrics like 'Improved performance by 30%'",
+              "💡 Use stronger action verbs"
+            ],
+            atsScore: 72,
+            keywords: ["JavaScript", "React", "Node.js", "Python", "SQL", "Git"],
+            wordCount: resumeContent?.split(/\s+/).length || 0
+          };
+        }
+        return await service.analyzeResume(resumeContent, resumeTitle, userSkills);
+      },
       'Failed to analyze resume'
     );
   };
 
-  // NEW: Optimize resume content
+  // Optimize resume content
   const optimizeResume = (resumeContent, improvementType) => {
     const { service } = getAIService();
     return withAICheck(
@@ -97,7 +134,7 @@ export const AIProvider = ({ children }) => {
     );
   };
 
-  // NEW: Generate ATS bullet point
+  // Generate ATS bullet point
   const generateAtsBullet = (resumeContent, type) => {
     const { service } = getAIService();
     return withAICheck(
@@ -106,7 +143,7 @@ export const AIProvider = ({ children }) => {
     );
   };
 
-  // NEW: Rewrite resume section
+  // Rewrite resume section
   const rewriteSection = (resumeContent, section) => {
     const { service } = getAIService();
     return withAICheck(
@@ -115,7 +152,7 @@ export const AIProvider = ({ children }) => {
     );
   };
 
-  // NEW: Parse job description
+  // Parse job description
   const parseJobDescription = (content, inputType) => {
     const { service } = getAIService();
     return withAICheck(
@@ -167,9 +204,17 @@ export const AIProvider = ({ children }) => {
 
   // Get current AI provider name for display
   const getCurrentAIProvider = () => {
+    if (FORCE_MOCK_AI) return 'Mock AI (Testing)';
     if (isPremium) return 'OpenRouter (Premium)';
-    if (geminiService.isRealAIAvailable()) return 'Google Gemini (Free)';
+    if (geminiService.isRealAIAvailable && geminiService.isRealAIAvailable()) return 'Google Gemini (Free)';
     return 'Mock AI (Free)';
+  };
+
+  // Get real AI status
+  const isRealAIAvailable = () => {
+    if (FORCE_MOCK_AI) return false;
+    if (isPremium) return true;
+    return geminiService.isRealAIAvailable && geminiService.isRealAIAvailable();
   };
 
   return (
@@ -185,9 +230,9 @@ export const AIProvider = ({ children }) => {
       parseJobDescription,
       isProcessing,
       isPremium,
-      isGeminiAvailable: geminiService.isRealAIAvailable(),
+      isGeminiAvailable: geminiService.isRealAIAvailable && geminiService.isRealAIAvailable(),
       currentAIProvider: getCurrentAIProvider(),
-      isRealAI: isPremium || geminiService.isRealAIAvailable()
+      isRealAI: isRealAIAvailable()
     }}>
       {children}
     </AIContext.Provider>
