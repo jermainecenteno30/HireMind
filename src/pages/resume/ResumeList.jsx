@@ -25,7 +25,7 @@ import AIResumeFeedback from '../../components/resume/AIResumeFeedback';
 
 const ResumeList = () => {
   const { resumes, addResume, updateResume, deleteResume, canAddResume } = useResumes();
-  const { isPremium, user } = useAuth();
+  const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [editingResume, setEditingResume] = useState(null);
   const [viewingResume, setViewingResume] = useState(null);
@@ -172,11 +172,9 @@ const ResumeList = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Resume Manager</h1>
           <p className="text-gray-600 mt-2">Create and manage professional resumes with our builder</p>
-          {!isPremium && (
-            <p className="text-sm text-gray-500 mt-1">
-              Free tier: {resumes.length}/3 resumes used
-            </p>
-          )}
+          <p className="text-sm text-green-600 mt-1">
+            ✨ AI features and multiple templates now FREE for all users!
+          </p>
         </div>
         <Button onClick={() => setShowForm(true)} disabled={!canAddResume()}>
           <PlusIcon className="h-5 w-5 mr-2" />
@@ -241,8 +239,8 @@ const ResumeList = () => {
                   </div>
                   
                   <p className="text-sm text-gray-600 line-clamp-3 mb-4">
-  {resume.content && typeof resume.content === 'string' ? resume.content.substring(0, 150) : 'No content yet'}...
-</p>
+                    {resume.content && typeof resume.content === 'string' ? resume.content.substring(0, 150) : 'No content yet'}...
+                  </p>
                   
                   <Button 
                     variant="outline" 
@@ -260,7 +258,7 @@ const ResumeList = () => {
         </AnimatePresence>
       </div>
       
-      {/* View Resume Modal with Templates */}
+      {/* View Resume Modal with Templates - NOW FREE FOR ALL */}
       <AnimatePresence>
         {viewingResume && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -317,63 +315,50 @@ const ResumeList = () => {
                   </div>
                 </div>
                 
-                {/* Template Selector - Only for Premium users */}
-                {isPremium && (
-                  <div className="mt-4">
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Choose Template Style
-                    </label>
-                    <TemplateSelector 
-                      selectedTemplate={selectedTemplate}
-                      onSelect={setSelectedTemplate}
-                    />
-                  </div>
-                )}
+                {/* Template Selector - NOW FREE FOR ALL USERS */}
+                <div className="mt-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                    Choose Template Style
+                  </label>
+                  <TemplateSelector 
+                    selectedTemplate={selectedTemplate}
+                    onSelect={setSelectedTemplate}
+                  />
+                </div>
               </div>
               
               {/* Modal Content - Rendered Template with null check */}
               <div className="p-6">
-{viewingResume && viewingResume.content && typeof viewingResume.content === 'string' ? (
-  renderResumeTemplate()
-) : (
-  <div className="text-center py-12 bg-gray-50 rounded-lg">
-    <DocumentTextIcon className="h-16 w-16 text-gray-300 mx-auto mb-3" />
-    <h3 className="text-lg font-medium text-gray-900 mb-2">No Resume Content</h3>
-    <p className="text-gray-500 mb-4">
-      This resume doesn't have any content yet.
-    </p>
-    <Button 
-      size="sm" 
-      onClick={() => {
-        setViewingResume(null);
-        handleEdit(viewingResume);
-      }}
-    >
-      <PencilIcon className="h-4 w-4 mr-2" />
-      Edit Resume
-    </Button>
-  </div>
-)}
-                
-                {/* AI Resume Feedback Section (Premium) */}
-                {isPremium && viewingResume && viewingResume.content && typeof viewingResume.content === 'string' && (
-  <div className="mt-6">
-    <AIResumeFeedback 
-      resumeContent={viewingResume.content}
-      resumeTitle={viewingResume.title}
-      userSkills={viewingResume.tags || []}
-    />
-  </div>
-)}
-                {/* Upgrade prompt for free users */}
-                {!isPremium && (
-                  <div className="mt-6 p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg text-center">
-                    <p className="text-sm text-gray-700">
-                      🎨 Want more templates and AI feedback? 
-                      <button className="ml-2 text-primary-600 hover:text-primary-700 font-medium">
-                        Upgrade to Premium - ₱99/month
-                      </button>
+                {viewingResume && viewingResume.content && typeof viewingResume.content === 'string' ? (
+                  renderResumeTemplate()
+                ) : (
+                  <div className="text-center py-12 bg-gray-50 rounded-lg">
+                    <DocumentTextIcon className="h-16 w-16 text-gray-300 mx-auto mb-3" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Resume Content</h3>
+                    <p className="text-gray-500 mb-4">
+                      This resume doesn't have any content yet.
                     </p>
+                    <Button 
+                      size="sm" 
+                      onClick={() => {
+                        setViewingResume(null);
+                        handleEdit(viewingResume);
+                      }}
+                    >
+                      <PencilIcon className="h-4 w-4 mr-2" />
+                      Edit Resume
+                    </Button>
+                  </div>
+                )}
+                
+                {/* AI Resume Feedback Section - NOW FREE FOR ALL USERS */}
+                {viewingResume && viewingResume.content && typeof viewingResume.content === 'string' && (
+                  <div className="mt-6">
+                    <AIResumeFeedback 
+                      resumeContent={viewingResume.content}
+                      resumeTitle={viewingResume.title}
+                      userSkills={viewingResume.tags || []}
+                    />
                   </div>
                 )}
               </div>
