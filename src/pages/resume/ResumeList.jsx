@@ -472,4 +472,5 @@ const ResumeList = () => {
   );
 };
 
+
 export default ResumeList;
